@@ -1,0 +1,58 @@
+{
+    "name": "glitchr/omnibill",
+    "type": "library",
+    "description": "Omnibill: one contract for transmitting and receiving electronic invoices - submit a conformant file (Factur-X, UBL, CII), follow its lifecycle statuses, receive suppliers' invoices, declare a status, look a company up in the directory, transmit e-reporting - whoever carries it: an e-mail (omnibill/email), an approved platform's standard API XP Z12-013 (omnibill/afnor), Chorus Pro (omnibill/chorus-pro); and its Symfony bundle.",
+    "keywords": [
+        "invoice",
+        "e-invoicing",
+        "facture-electronique",
+        "factur-x",
+        "xp-z12-013",
+        "chorus-pro",
+        "omnibill"
+    ],
+    "homepage": "https://github.com/glitchr-studio/omnibill",
+    "license": "LGPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Marco Meyer",
+            "email": "marco.meyer@glitchr.io"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "symfony/http-client-contracts": "^3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0",
+        "symfony/config": "^6.4|^7.0|^8.0",
+        "symfony/dependency-injection": "^6.4|^7.0|^8.0",
+        "symfony/http-client": "^6.4|^7.0|^8.0",
+        "symfony/http-kernel": "^6.4|^7.0|^8.0"
+    },
+    "suggest": {
+        "omnibill/email": "The invoice attached to an e-mail, its statuses kept by hand: the default gateway, and the tests'",
+        "omnibill/afnor": "An approved platform (plateforme agréée) through the standard API XP Z12-013: flows and directory",
+        "omnibill/chorus-pro": "Chorus Pro through PISTE: invoices to the public sector",
+        "symfony/config": "In a Symfony application: the configuration of Omnibill\\Bridge\\Symfony\\OmnibillBundle",
+        "symfony/dependency-injection": "In a Symfony application: the services of Omnibill\\Bridge\\Symfony\\OmnibillBundle",
+        "symfony/http-kernel": "In a Symfony application: Omnibill\\Bridge\\Symfony\\OmnibillBundle itself"
+    },
+    "autoload": {
+        "psr-4": {
+            "Omnibill\\": ""
+        },
+        "exclude-from-classmap": [
+            "/Tests/",
+            "/docker/"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Omnibill\\Tests\\": "Tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

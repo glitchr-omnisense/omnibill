@@ -1,0 +1,27 @@
+# glitchr/omnibill with every gateway package:
+#
+#   cp .env.dist .env                                          # a mailer, a platform's credentials, PISTE's, when you have them
+#   docker compose run --rm omnibill gateways                  # which gateways are installed and configured, what each carries and does
+#   docker compose run --rm omnibill bare --live               # the e-mail sent for real through MAILER_DSN
+#   docker compose run --rm omnibill bare                      # plain PHP: no bundle, no container, the platforms' recorded answers, and what PHP loaded
+#   docker compose run --rm omnibill test                      # every package's tests
+#
+# Gateways come from GitHub (branch 1.x) unless their checkout sits under
+# OMNIBILL_PLUGINS (set it to ../.. in .env when this core sits in the
+# workspace beside them): then that checkout is what runs.
+name: omnibill-harness
+
+services:
+  omnibill:
+    build: .
+    image: glitchr/omnibill-harness
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ..:/omnibill/core
+      - ${OMNIBILL_PLUGINS:-./plugins}:/omnibill/plugins:ro
+      - harness:/harness
+
+volumes:
+  harness:
