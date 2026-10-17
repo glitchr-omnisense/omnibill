@@ -7,7 +7,7 @@ order: 4
 
 Omnibill runs without a framework ([installation](installation.md)); in a Symfony application its
 bundle does the wiring. Its components - `symfony/config`, `symfony/dependency-injection`,
-`symfony/http-kernel` - are not required by `glitchr/omnibill`: the application has them, and
+`symfony/http-kernel` - are not required by `omniscient/omnibill`: the application has them, and
 nothing of them is loaded outside Symfony.
 
 Register `Omnibill\Bridge\Symfony\OmnibillBundle` (no Flex recipe):

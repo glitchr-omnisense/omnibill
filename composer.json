@@ -1,5 +1,5 @@
 {
-    "name": "glitchr/omnibill",
+    "name": "omniscient/omnibill",
     "type": "library",
     "description": "Omnibill: one contract for transmitting and receiving electronic invoices - submit a conformant file (Factur-X, UBL, CII), follow its lifecycle statuses, receive suppliers' invoices, declare a status, look a company up in the directory, transmit e-reporting - whoever carries it: an e-mail (omnibill/email), an approved platform's standard API XP Z12-013 (omnibill/afnor), Chorus Pro (omnibill/chorus-pro); and its Symfony bundle.",
     "keywords": [
@@ -29,6 +29,9 @@
         "symfony/dependency-injection": "^6.4|^7.0|^8.0",
         "symfony/http-client": "^6.4|^7.0|^8.0",
         "symfony/http-kernel": "^6.4|^7.0|^8.0"
+    },
+    "replace": {
+        "glitchr/omnibill": "self.version"
     },
     "suggest": {
         "omnibill/email": "The invoice attached to an e-mail, its statuses kept by hand: the default gateway, and the tests'",

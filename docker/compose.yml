@@ -1,4 +1,4 @@
-# glitchr/omnibill with every gateway package:
+# omniscient/omnibill with every gateway package:
 #
 #   cp .env.dist .env                                          # a mailer, a platform's credentials, PISTE's, when you have them
 #   docker compose run --rm omnibill gateways                  # which gateways are installed and configured, what each carries and does
@@ -14,7 +14,7 @@ name: omnibill-harness
 services:
   omnibill:
     build: .
-    image: glitchr/omnibill-harness
+    image: omniscient/omnibill-harness
     env_file:
       - path: .env
         required: false

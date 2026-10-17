@@ -1,8 +1,13 @@
-# glitchr/omnibill
+# omniscient/omnibill
 
 One contract for **transmitting and receiving electronic invoices** - whoever carries them: an
 e-mail, an approved platform (plateforme agréée) through the standard API of XP Z12-013, Chorus
 Pro for the public sector.
+
+Published as `omniscient/omnibill` (formerly `glitchr/omnibill`, which this package replaces: a
+`composer.json` that still requires the old name keeps resolving to this package and never installs
+both). `omniscient/` is the vendor of every family's core, the providers keep `omnibill/`, the
+namespace `Omnibill\` and the GitHub repositories do not change.
 
 ```php
 $gateway = $registry->get('invoices');                       // or 'platform', 'public': the same calls
@@ -60,7 +65,7 @@ site changes gateway in its configuration - `factory: afnor` - not its code.
 ## Plain PHP
 
 ```sh
-composer require glitchr/omnibill omnibill/email
+composer require omniscient/omnibill omnibill/email
 ```
 
 ```php
@@ -97,7 +102,7 @@ docker compose run --rm omnibill test
 
 ## Responsibility
 
-`glitchr/omnibill` and its `omnibill/*` providers are independent, unofficial clients: none is
+`omniscient/omnibill` and its `omnibill/*` providers are independent, unofficial clients: none is
 affiliated with, endorsed by or sponsored by the services it reaches. Each service keeps its own
 terms (accounts and contracts, keys, the platforms' own rules, rate limits), named with a link in
 the "Responsibility" section of the README of each provider that reaches one. The MIT licence covers
