@@ -1,6 +1,6 @@
 ---
 title: The Docker harness
-order: 5
+order: 70
 ---
 
 # The Docker harness
@@ -55,3 +55,24 @@ checks the list.
 
 The image is `php:8.4-cli-alpine` with Composer; the harness's packages live in the `harness`
 volume of the `omnibill-harness` project.
+
+## Run on 2026-10-26
+
+The same script, `bare` with no option, run on the packages' checkouts through
+`OMNIBILL_AUTOLOAD=vendor/autoload.php php core/docker/harness/bin/bare` (PHP 8.4, no network),
+printed the lines above unchanged.
+
+## The entrypoint
+
+`docker/entrypoint.sh` runs `docker/harness/setup.php` first: it writes the harness's
+`composer.json` and `phpunit.xml` in the `harness` volume - this core from its checkout, each
+gateway from its checkout under `OMNIBILL_PLUGINS` when one is there, from
+`https://github.com/glitchr-omnisense/omnibill-<slug>.git` (branch 1.x) otherwise. Then
+`composer install` the first time, `composer update` when `composer.json` is newer than the lock,
+and the command: `test` (PHPUnit), `bare`, `composer`, `sh` or `php` as they are, anything else the
+console (`gateways` by default).
+
+`docker/harness/config/gateways.php` says which environment variables configure each gateway
+(`INVOICE_FROM`; `PA_FLOW_URL`, `PA_TOKEN_URL`, `PA_CLIENT_ID`, `PA_CLIENT_SECRET`, and
+`PA_DIRECTORY_URL`, `PA_WEBHOOK_KEY`; `PISTE_CLIENT_ID`, `PISTE_CLIENT_SECRET`, `CPRO_LOGIN`,
+`CPRO_PASSWORD`, `CPRO_SANDBOX` - 1 by default) and the example options `bare` uses instead.

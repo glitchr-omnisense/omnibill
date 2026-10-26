@@ -1,6 +1,6 @@
 ---
 title: Installation
-order: 1
+order: 10
 ---
 
 # Installation and a first invoice
@@ -11,13 +11,23 @@ composer require omnibill/afnor                      # an approved platform, XP 
 composer require omnibill/chorus-pro                 # the public sector, through PISTE
 ```
 
-PHP 8.2 or later.
+## Requirements
 
-Omnibill needs no framework. The core requires PHP and `symfony/http-client-contracts` (the
-interfaces, no client); `omnibill/email` requires `symfony/mailer`, the platforms' packages
-`symfony/http-client` - libraries, not a framework - and each takes the application's mailer or
-client when it is given one. It runs the same in plain PHP, in a worker, in Laravel or Slim, and
-in Symfony, where a bundle does the wiring ([Symfony](symfony.md)).
+- PHP 8.2 or later, with `mbstring` (error messages are cut with `mb_substr()`).
+- `omnisense/omnibill` requires `symfony/http-client-contracts` (^3.0, the interfaces, no client)
+  and nothing else.
+- `omnibill/email` requires `symfony/mailer` (6.4, 7 or 8); `omnibill/afnor` requires
+  `symfony/http-client` (6.4, 7 or 8) and `ext-dom` (it reads lifecycle messages);
+  `omnibill/chorus-pro` requires `symfony/http-client`. Libraries, not a framework: each factory
+  takes the application's mailer or client when it is given one.
+- For the Symfony bundle: `symfony/config`, `symfony/dependency-injection`, `symfony/http-kernel`
+  (6.4, 7 or 8), suggested, not required.
+
+> [!WARNING]
+> Known defect: `composer.json` does not require `ext-mbstring`, where `Http\Answer` and the platforms' error messages call `mb_substr()`: on a PHP built without it, an error answer is a fatal error.
+
+Omnibill runs the same in plain PHP, in a worker, in Laravel or Slim, and in Symfony, where a
+bundle does the wiring ([Symfony](symfony.md)).
 
 ## Plain PHP
 
@@ -70,8 +80,9 @@ F-2026-042: Envoyée to compta@erable.example, 08bf5ec24950b3d91b356c15f5a918d6@
   2026-10-08 00:54 Encaissée (212)
 ```
 
-(2026-10-08; with `MAILER_DSN=smtp://...` the e-mail leaves for real - the harness sent one to a
-local SMTP server that day, the PDF attached)
+(2026-10-08; run again on 2026-10-26 on the packages' checkouts, PHP 8.4, the same lines with that
+day's times and another reference. With `MAILER_DSN=smtp://...` the e-mail leaves for real - the
+harness sent one to a local SMTP server on 2026-10-08, the PDF attached.)
 
 That is all there is to it:
 
@@ -79,6 +90,20 @@ That is all there is to it:
   e-mail, an HTTP client for the platforms;
 - the **registry**, built by hand from the factories and the gateways' options, by name;
 - the **gateways** it gives, each answering the same questions ([gateways](gateways.md)).
+
+`null://null` is Symfony Mailer's transport that sends nothing: the script runs as it is. The
+statuses are kept in the factory's status store - here, with none given, this process's memory
+(`InMemoryStatusStore`); an application gives its own, a table ([usage](usage-statuses.md#by-e-mail)).
+
+## In a framework
+
+- **Symfony**: `Omnibill\Bridge\Symfony\OmnibillBundle` registers the gateway factories (the
+  e-mail's on the application's mailer, the platforms' on its `http_client`), builds the registry
+  from `config/packages/omnibill.yaml` and makes each gateway injectable by its name:
+  [Symfony](symfony.md).
+- **Laravel**: there is no bridge package; a service provider builds the registry once:
+  [Laravel](laravel.md).
+- **Any other**: build the `Registry` once, where the framework builds its services.
 
 No class of a framework is loaded on the way - a test of this package checks it in a process of
 its own (`Tests/BareTest.php`), and so does `docker compose run --rm omnibill bare`
@@ -96,6 +121,8 @@ its own (`Tests/BareTest.php`), and so does `docker compose run --rm omnibill ba
    as a lifecycle message (CDAR) the application produced; the e-mail gateway records it.
 
 ## Errors
+
+The whole list, and what each gateway maps to which: [Errors](errors.md).
 
 | Exception | When |
 |---|---|

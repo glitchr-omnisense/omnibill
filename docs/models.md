@@ -1,6 +1,6 @@
 ---
 title: Models
-order: 2
+order: 21
 ---
 
 # Models
@@ -20,7 +20,33 @@ application.
 | `issuedAt`, `total`, `currency` | what the application knows; not read from the file |
 | `profile`, `rule` | the platform's flowProfile (Basic, CIUS, Extended-CTC-FR) and processingRule (B2B, B2BInt, B2C, B2G...), where it asks |
 
-`Invoice::fromFile($path, $syntax, $number, $buyer)`, `sha256()`, `size()`.
+`new Invoice(string $content, string $filename, Syntax $syntax, ?string $number = null, ?Party
+$seller = null, ?Party $buyer = null, ?\DateTimeImmutable $issuedAt = null, ?string $total = null,
+?string $currency = 'EUR', ?string $profile = null, ?string $rule = null)`.
+
+`Invoice::fromFile($path, $syntax, $number, $buyer)` reads a file (an `\InvalidArgumentException`
+when it cannot: `Cannot read <path>.`), its name the file's base name, its syntax the one given, else
+Factur-X for a `.pdf` and CII for anything else - a UBL file must say `Syntax::UBL`. `sha256()` is
+the content's hash, `size()` its length in bytes.
+
+## Party
+
+`new Party(?string $name = null, ?string $siren = null, ?string $siret = null, ?string
+$electronicAddress = null, ?string $routingCode = null, ?string $email = null, ?string $country =
+'FR')`: identifiers only. The e-mail gateway sends to the buyer's `email`; the platforms read no
+party (the file says who is who).
+
+## Syntax
+
+| Case | Value | `mimeType()` | `extension()` | |
+|---|---|---|---|---|
+| `FACTURX` | `Factur-X` | `application/pdf` | `pdf` | a PDF/A-3 with its CII XML inside (Factur-X, ZUGFeRD) |
+| `UBL` | `UBL` | `application/xml` | `xml` | UBL 2.1 |
+| `CII` | `CII` | `application/xml` | `xml` | UN/CEFACT Cross Industry Invoice |
+| `CDAR` | `CDAR` | `application/xml` | `xml` | a lifecycle status message |
+| `FRR` | `FRR` | `application/xml` | `xml` | an e-reporting file |
+
+The values are XP Z12-013's `flowSyntax` names.
 
 ## Flow
 
@@ -36,7 +62,17 @@ One transmission on a gateway: an invoice, a status, a report, sent or received.
 | `errors` | why the platform rejected it |
 | `trackingId`, `invoiceNumber`, `submittedAt`, `updatedAt`, `name`, `data` | |
 
-`with(state, status, history, errors, updatedAt, data)` gives the same flow updated.
+`with(state, status, history, errors, updatedAt, data)` gives the same flow updated (each argument
+null keeps the flow's). The enums:
+
+| Enum | Cases (value) |
+|---|---|
+| `FlowKind` | `INVOICE` (`invoice`), `LIFECYCLE` (`lifecycle`), `REPORT` (`report`), `OTHER` (`other`) |
+| `Direction` | `OUT` (`out`: sent by the application), `IN` (`in`: received) |
+| `FlowState` | `PENDING` (`pending`: received, not checked), `ACCEPTED` (`accepted`: checked and taken), `REJECTED` (`rejected`: refused by the platform's checks, see `errors`) |
+
+The flow's state is the platform's technical acknowledgement of the file; what the recipient did with
+the invoice is its `status`.
 
 ## LifecycleStatus
 
@@ -61,7 +97,11 @@ The reform's statuses, as the DGFiP's external specifications list them (general
 | `REJECTED` | 213 | Rejetée | mandatory: a platform's checks found an anomaly |
 | `SENT` | - | Envoyée | the family's own: sent outside any platform (e-mail) |
 
-`code()`, `label()`, `isMandatory()`, `isFinal()`, `LifecycleStatus::fromCode('fr:212')`.
+Values are lower-case snake case (`deposited`, `made_available`, `payment_sent`...). `code()` is the
+reform's code (null for `SENT`), `label()` the French name above, `isMandatory()` true for 200, 210,
+212 and 213, `isFinal()` true for `REFUSED`, `REJECTED` and `PAID` (nothing follows them).
+`LifecycleStatus::fromCode(int|string $code)` reads `212`, `"212"` or `"fr:212"` (leading non-digits
+are dropped); a code that is not one of 200 to 213 is null.
 
 ## StatusChange
 
@@ -87,11 +127,17 @@ An e-reporting file: `content`, `filename`, `syntax` (`FRR`), `rule` (B2C, B2BIn
 
 ## Notification
 
-A platform's callback, its signature checked: `event` (`FLOW_UPDATED`, `RECEIVED`, `OTHER`), the
-`flow`, `at`, `id` (what a callback sent twice is recognised by), `data`.
+A platform's callback, its signature checked: `event` (`Event::FLOW_UPDATED` `flow_updated`: a flow
+was taken or rejected; `RECEIVED` `received`: something arrived for the application; `OTHER`
+`other`), the `flow`, `at`, `id` (what a callback sent twice is recognised by), `data` (the
+platform's payload).
 
 ## Capabilities
 
 `syntaxes` (what it carries), `approved` (an approved platform's channel), `publicSector`,
-`maxSize` (bytes). `carries(Syntax)`, `toArray()`. The operations are asked of the gateway:
-`supports(Receive::class)`.
+`maxSize` (bytes). Defaults: Factur-X, UBL and CII, not approved, not public sector, no size.
+`carries(Syntax)`, `toArray()` (the syntaxes as their values, and the other fields). The operations
+are asked of the gateway: `supports(Receive::class)`.
+
+`maxSize` is said, not enforced: no gateway refuses a file for its size before sending it; the
+platform does (Chorus Pro: codeRetour `20001`).

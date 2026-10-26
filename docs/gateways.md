@@ -1,6 +1,6 @@
 ---
 title: Gateways
-order: 3
+order: 30
 ---
 
 # Gateways
@@ -33,6 +33,10 @@ a shortcut for `execute(new Request\...)`. What a gateway does not do throws
 | `notify` | - | webhooks, `Afnor-Signature` checked | - |
 | Approved platform | no | yes | the public sector's portal |
 | Needs | a mailer, a sender | the platform's addresses, OAuth 2.0 client credentials | a PISTE application, a technical account |
+
+Each gateway's details: [submitting and following](usage-submitting.md),
+[receiving](usage-receiving.md), [statuses](usage-statuses.md), [the directory and
+e-reporting](usage-directory.md), and the gateways' own manuals.
 
 ## Following an invoice
 
@@ -89,4 +93,5 @@ An action implements `Action\ActionInterface` (`supports(Request)`, `execute(Req
 the request's result) and, to be handed the client, `Action\ApiAwareInterface`. Call the platform
 through `Omnibill\Http\Answer::send()` (no answer, a server error or a quota: an
 `UnreachableException`) and `Omnibill\Http\ClientCredentials` for an OAuth 2.0 token. Leave out
-the actions the platform's documentation does not show.
+the actions the platform's documentation does not show. The whole guide, with an example run:
+[Writing a gateway](providers.md).
