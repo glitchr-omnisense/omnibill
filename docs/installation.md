@@ -6,7 +6,7 @@ order: 1
 # Installation and a first invoice
 
 ```sh
-composer require omniscient/omnibill omnibill/email     # the invoice by e-mail: the default
+composer require omnisense/omnibill omnibill/email     # the invoice by e-mail: the default
 composer require omnibill/afnor                      # an approved platform, XP Z12-013
 composer require omnibill/chorus-pro                 # the public sector, through PISTE
 ```

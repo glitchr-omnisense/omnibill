@@ -1,12 +1,12 @@
-# omniscient/omnibill
+# omnisense/omnibill
 
 One contract for **transmitting and receiving electronic invoices** - whoever carries them: an
 e-mail, an approved platform (plateforme agréée) through the standard API of XP Z12-013, Chorus
 Pro for the public sector.
 
-Published as `omniscient/omnibill` (formerly `glitchr/omnibill`, which this package replaces: a
+Published as `omnisense/omnibill` (formerly `glitchr/omnibill`, which this package replaces: a
 `composer.json` that still requires the old name keeps resolving to this package and never installs
-both). `omniscient/` is the vendor of every family's core, the providers keep `omnibill/`, the
+both). `omnisense/` is the vendor of every family's core, the providers keep `omnibill/`, the
 namespace `Omnibill\` and the GitHub repositories do not change.
 
 ```php
@@ -29,9 +29,9 @@ This package holds the contract (`GatewayInterface`, the requests `Submit`, `Fet
 
 | Package | Carries | Approved platform |
 |---|---|---|
-| [`omnibill/email`](https://github.com/glitchr-studio/omnibill-email) | the invoice attached to an e-mail to the buyer (symfony/mailer); statuses kept by hand. The default, and the tests' | no |
-| [`omnibill/afnor`](https://github.com/glitchr-studio/omnibill-afnor) | any approved platform through XP Z12-013: flows (invoices, lifecycle messages, e-reporting), webhooks, the directory | yes |
-| [`omnibill/chorus-pro`](https://github.com/glitchr-studio/omnibill-chorus-pro) | Chorus Pro through PISTE: invoices to public entities, deposited and followed | the public sector's portal |
+| [`omnibill/email`](https://github.com/glitchr-omnisense/omnibill-email) | the invoice attached to an e-mail to the buyer (symfony/mailer); statuses kept by hand. The default, and the tests' | no |
+| [`omnibill/afnor`](https://github.com/glitchr-omnisense/omnibill-afnor) | any approved platform through XP Z12-013: flows (invoices, lifecycle messages, e-reporting), webhooks, the directory | yes |
+| [`omnibill/chorus-pro`](https://github.com/glitchr-omnisense/omnibill-chorus-pro) | Chorus Pro through PISTE: invoices to public entities, deposited and followed | the public sector's portal |
 
 ## What a gateway is, and is not
 
@@ -65,7 +65,7 @@ site changes gateway in its configuration - `factory: afnor` - not its code.
 ## Plain PHP
 
 ```sh
-composer require omniscient/omnibill omnibill/email
+composer require omnisense/omnibill omnibill/email
 ```
 
 ```php
@@ -102,7 +102,7 @@ docker compose run --rm omnibill test
 
 ## Responsibility
 
-`omniscient/omnibill` and its `omnibill/*` providers are independent, unofficial clients: none is
+`omnisense/omnibill` and its `omnibill/*` providers are independent, unofficial clients: none is
 affiliated with, endorsed by or sponsored by the services it reaches. Each service keeps its own
 terms (accounts and contracts, keys, the platforms' own rules, rate limits), named with a link in
 the "Responsibility" section of the README of each provider that reaches one. The MIT licence covers

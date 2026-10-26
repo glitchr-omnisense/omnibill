@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Every gateway package: its slug (omnibill/<slug>, github.com/glitchr-studio/omnibill-<slug>),
+ * Every gateway package: its slug (omnibill/<slug>, github.com/glitchr-omnisense/omnibill-<slug>),
  * its tests' namespace and its factory class.
  */
 return [
