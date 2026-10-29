@@ -116,5 +116,5 @@ tells: the recipient's statuses arrive as lifecycle flows, through [receive()](u
 Chorus Pro's statuses, and the reading of each: the
 [chorus-pro manual](https://github.com/glitchr-omnisense/omnibill-chorus-pro/blob/1.x/docs/index.md).
 
-> [!WARNING]
-> Known defect: in `omnibill/chorus-pro`, a `dateDepot` or `dateHeureEtatCourant` that PHP cannot read as a date throws PHP's own `\Exception` from `new \DateTimeImmutable()`, where an `OmnibillException` (or a null date) is expected.
+A `dateDepot` or `dateHeureEtatCourant` that PHP cannot read as a date is no date in
+`omnibill/chorus-pro`: `submittedAt` the time of the deposit, the status change's `at` null.
