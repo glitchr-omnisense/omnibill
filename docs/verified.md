@@ -43,7 +43,7 @@ from the packages' fixtures through the harness's `recorded.php`.
 - The [Laravel](laravel.md) page was written from the registry's API; it was not run in a Laravel
   application.
 - The known defects found while writing these pages: `ext-mbstring` not required though
-  `mb_substr()` is called ([Installation](installation.md#requirements)); a Chorus Pro date PHP cannot
+  `mb_substr()` is called (fixed: composer.json requires it); a Chorus Pro date PHP cannot
   read throwing PHP's `\Exception` ([Submitting](usage-submitting.md#following)).
 
 ## Responsibility

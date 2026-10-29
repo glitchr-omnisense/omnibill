@@ -23,9 +23,6 @@ composer require omnibill/chorus-pro                 # the public sector, throug
 - For the Symfony bundle: `symfony/config`, `symfony/dependency-injection`, `symfony/http-kernel`
   (6.4, 7 or 8), suggested, not required.
 
-> [!WARNING]
-> Known defect: `composer.json` does not require `ext-mbstring`, where `Http\Answer` and the platforms' error messages call `mb_substr()`: on a PHP built without it, an error answer is a fatal error.
-
 Omnibill runs the same in plain PHP, in a worker, in Laravel or Slim, and in Symfony, where a
 bundle does the wiring ([Symfony](symfony.md)).
 
