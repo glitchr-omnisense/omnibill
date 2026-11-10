@@ -87,6 +87,7 @@ server ([Verified, and not](verified.md)).
 - Usage: [submitting and following](usage-submitting.md), [receiving and webhooks](usage-receiving.md),
   [declaring statuses](usage-statuses.md), [the directory and e-reporting](usage-directory.md),
   [accounting: journal entries and contacts](usage-accounting.md).
+- [Usage policies](policies.md): each provider's limits and rights, the guard, a site's tightening.
 - [Configuration reference](configuration.md): every option of every factory.
 - [Errors](errors.md): the exceptions and when each is thrown.
 - [Testing](testing.md): testing an application that uses Omnibill.

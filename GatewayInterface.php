@@ -11,6 +11,7 @@ use Omnibill\Model\Invoice;
 use Omnibill\Model\Notification;
 use Omnibill\Model\StatusChange;
 use Omnibill\Request\Request;
+use Omnisense\Contracts\Provider\ProviderInterface;
 
 /**
  * One way to transmit and receive electronic invoices, configured - an
@@ -22,8 +23,11 @@ use Omnibill\Request\Request;
  * A gateway carries files already conformant. It produces none, reads none
  * beyond what it must to route them (a lifecycle message's status), and
  * keeps no books: the application does.
+ *
+ * It is omnisense/contracts' provider: its Capabilities carry its usage
+ * policy (Capabilities::policy()).
  */
-interface GatewayInterface
+interface GatewayInterface extends ProviderInterface
 {
     public function getName(): string;
 

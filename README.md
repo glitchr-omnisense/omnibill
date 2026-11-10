@@ -64,6 +64,7 @@ site changes gateway in its configuration - `factory: afnor` - not its code.
 - [Gateways: the contract, what each does, writing one](docs/gateways.md)
 - [Submitting and following](docs/usage-submitting.md), [Receiving and webhooks](docs/usage-receiving.md), [Declaring statuses](docs/usage-statuses.md), [The directory and e-reporting](docs/usage-directory.md)
 - [Accounting: journal entries and contacts](docs/usage-accounting.md) (since 1.1), mapped from omnibase/ledger
+- [Usage policies](docs/policies.md): each provider's limits and rights, the guard, a site's tightening (omnisense/contracts)
 - [Configuration reference](docs/configuration.md), [Errors](docs/errors.md), [Testing](docs/testing.md)
 - [The Docker harness: bare PHP, the console](docs/harness.md), [Writing a gateway](docs/providers.md)
 - [Verified, and not](docs/verified.md)
@@ -111,7 +112,8 @@ docker compose run --rm omnibill test
 `omnisense/omnibill` and its `omnibill/*` providers are independent, unofficial clients: none is
 affiliated with, endorsed by or sponsored by the services it reaches. Each service keeps its own
 terms (accounts and contracts, keys, the platforms' own rules, rate limits), named with a link in
-the "Responsibility" section of the README of each provider that reaches one. The MIT licence covers
+the "Responsibility" section of the README of each provider that reaches one, and declared in its
+`policy.json` ([usage policies](docs/policies.md)). The MIT licence covers
 this code only and grants no right to any service or to its data.
 
 Whoever installs and runs these packages is responsible for complying with those terms, for

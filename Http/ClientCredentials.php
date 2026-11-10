@@ -3,12 +3,14 @@
 namespace Omnibill\Http;
 
 use Omnibill\Exception\InvalidKeyException;
+use Omnisense\Contracts\Policy\Backoff;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
  * An OAuth 2.0 access token by the client credentials grant - what the
  * platforms' APIs ask (XP Z12-013's, PISTE's): asked once, kept until a
- * minute before it lapses.
+ * minute before it lapses. Given the provider's Backoff, the token
+ * endpoint's 429 and Retry-After hold the provider's calls as any other's.
  */
 final class ClientCredentials
 {
@@ -23,6 +25,7 @@ final class ClientCredentials
         #[\SensitiveParameter] private readonly string $clientSecret,
         private readonly ?string $scope = null,
         private readonly ?\Closure $clock = null,
+        private readonly ?Backoff $backoff = null,
     ) {
     }
 
@@ -38,7 +41,7 @@ final class ClientCredentials
             'client_id' => $this->clientId,
             'client_secret' => $this->clientSecret,
             'scope' => $this->scope,
-        ])]);
+        ])], $this->backoff);
         if (\in_array($answer->status, [400, 401, 403], true)) {
             $error = json_decode($answer->body, true);
             $code = \is_array($error) && \is_scalar($error['error'] ?? null) ? (string) $error['error'] : null;

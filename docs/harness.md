@@ -68,7 +68,10 @@ printed the lines above unchanged.
 `docker/entrypoint.sh` runs `docker/harness/setup.php` first: it writes the harness's
 `composer.json` and `phpunit.xml` in the `harness` volume - this core from its checkout, each
 gateway from its checkout under `OMNIBILL_PLUGINS` when one is there, from
-`https://github.com/glitchr-omnisense/omnibill-<slug>.git` (branch 1.x) otherwise. Then
+`https://github.com/glitchr-omnisense/omnibill-<slug>.git` (branch 1.x) otherwise; omnisense/contracts
+likewise, from its checkout under `OMNISENSE_CONTRACTS` (its tests run with the family's) or GitHub.
+The compose file names the entrypoint and runs on Docker's default bridge, so the image may be
+another family's harness tagged. Then
 `composer install` the first time, `composer update` when `composer.json` is newer than the lock,
 and the command: `test` (PHPUnit), `bare`, `composer`, `sh` or `php` as they are, anything else the
 console (`gateways` by default).

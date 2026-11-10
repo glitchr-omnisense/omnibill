@@ -49,6 +49,12 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
  * it has one; the application's http_client is given to those that call a
  * platform. An application's own factories (a GatewayFactoryInterface) are
  * registered too, autoconfigured.
+ *
+ * Beside "options", a gateway takes "policy" (the site's tightening of the
+ * provider's usage policy, never looser) and "usage" (what the site is:
+ * commercial, open_source, contract). Its calls count in this process's
+ * memory: the Registry service's third argument takes a shared
+ * RateLimiterInterface where many processes serve the application.
  */
 final class OmnibillBundle extends AbstractBundle
 {
@@ -68,13 +74,15 @@ final class OmnibillBundle extends AbstractBundle
                         ->children()
                             ->scalarNode('factory')->isRequired()->cannotBeEmpty()->end()
                             ->variableNode('options')->defaultValue([])->end()
+                            ->variableNode('policy')->info('The site\'s tightening of the provider\'s usage policy, in its schema\'s shape (rateLimits, rights...): never looser.')->end()
+                            ->variableNode('usage')->info('What the site is: commercial, open_source, contract. A use the policy forbids fails when the gateway is built.')->end()
                         ->end()
                     ->end()
                 ->end()
             ->end();
     }
 
-    /** @param array{gateways: array<string, array{factory: string, options: array<string, mixed>}>} $config */
+    /** @param array{gateways: array<string, array{factory: string, options: array<string, mixed>, policy?: array<string, mixed>, usage?: array<string, mixed>}>} $config */
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
         $builder->registerForAutoconfiguration(GatewayFactoryInterface::class)->addTag('omnibill.gateway_factory');

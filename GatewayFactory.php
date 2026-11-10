@@ -5,7 +5,10 @@ namespace Omnibill;
 use Omnibill\Action\ActionInterface;
 use Omnibill\Action\ApiAwareInterface;
 use Omnibill\Exception\InvalidConfigException;
+use Omnibill\Exception\UsageLimitReachedException;
 use Omnibill\Model\Capabilities;
+use Omnisense\Contracts\Provider\Config as BaseConfig;
+use Omnisense\Contracts\Provider\ProviderFactory;
 
 /**
  * The Omnibus way: a gateway's factory fills a Config - its name, title,
@@ -14,22 +17,57 @@ use Omnibill\Model\Capabilities;
  * ("omnibill.action.<name>") - and the gateway is those actions, the client
  * handed to the ones that ask for it.
  *
+ * omnisense/contracts' factory underneath: before the client is built, the
+ * Config holds the provider's Backoff (Config::backoff(), for Http\Answer and
+ * ClientCredentials), and the gateway comes out behind its PolicyGuard - its
+ * capabilities' usage policy tightened by the "policy" option, checked
+ * against the "usage" option (UsageNotPermitted at once when a use the
+ * policy forbids is said).
+ *
  * Nothing here calls anything: a factory whose provider is reached over
  * HTTP takes its client in its own constructor.
  */
-abstract class GatewayFactory implements GatewayFactoryInterface
+abstract class GatewayFactory extends ProviderFactory implements GatewayFactoryInterface
 {
-    public function getName(): string
-    {
-        return self::text($this->createConfig(), 'omnibill.factory_name');
-    }
-
     public function create(array $options = []): GatewayInterface
     {
-        $config = $this->createConfig($options);
-        $required = $config->get('omnibill.required_options', []);
-        $config->validateNotEmpty(\is_array($required) ? array_values(array_filter($required, 'is_string')) : []);
+        $gateway = parent::create($options);
+        if (!$gateway instanceof Gateway) {
+            throw new InvalidConfigException(\sprintf('The "%s" factory built no omnibill gateway.', $this->getName()));
+        }
+        if (null !== $guard = $this->guard($gateway)) {
+            $gateway->guardWith($guard);
+        }
 
+        return $gateway;
+    }
+
+    /** @param array<string, mixed> $options */
+    public function createConfig(array $options = []): Config
+    {
+        return self::own(parent::createConfig($options));
+    }
+
+    abstract protected function populateConfig(Config $config): void;
+
+    protected function newConfig(array $options): Config
+    {
+        return new Config($options);
+    }
+
+    protected function limitException(): string
+    {
+        return UsageLimitReachedException::class;
+    }
+
+    final protected function configure(BaseConfig $c): void
+    {
+        $this->populateConfig(self::own($c));
+    }
+
+    final protected function make(BaseConfig $c): Gateway
+    {
+        $config = self::own($c);
         $api = $config->get('omnibill.api');
         if ($api instanceof \Closure) {
             $api = $api($config);
@@ -39,7 +77,7 @@ abstract class GatewayFactory implements GatewayFactoryInterface
             $capabilities = $capabilities($config);
         }
         if (!$capabilities instanceof Capabilities) {
-            throw new InvalidConfigException(\sprintf('The "%s" factory does not say what it carries (omnibill.capabilities).', self::text($config, 'omnibill.factory_name')));
+            throw new InvalidConfigException(\sprintf('The "%s" factory does not say what it carries (omnibill.capabilities).', $config->string('omnibill.factory_name') ?? ''));
         }
 
         $actions = [];
@@ -59,25 +97,11 @@ abstract class GatewayFactory implements GatewayFactoryInterface
             $actions[] = $action;
         }
 
-        return new Gateway(self::text($config, 'omnibill.factory_name'), self::text($config, 'omnibill.factory_title'), $capabilities, $actions);
+        return new Gateway($config->string('omnibill.factory_name') ?? '', $config->string('omnibill.factory_title') ?? '', $capabilities, $actions);
     }
 
-    /** @param array<string, mixed> $options */
-    public function createConfig(array $options = []): Config
+    private static function own(BaseConfig $c): Config
     {
-        $config = new Config($options);
-        $this->populateConfig($config);
-
-        return $config;
-    }
-
-    abstract protected function populateConfig(Config $config): void;
-
-    /** A key the factory fills ("omnibill.factory_name"), as a string. */
-    private static function text(Config $config, string $key): string
-    {
-        $value = $config->get($key);
-
-        return \is_scalar($value) ? (string) $value : '';
+        return $c instanceof Config ? $c : throw new InvalidConfigException('An omnibill factory builds from omnibill\'s Config.');
     }
 }

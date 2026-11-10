@@ -4,6 +4,7 @@ namespace Omnibill\Http;
 
 use Omnibill\Exception\ProviderException;
 use Omnibill\Exception\UnreachableException;
+use Omnisense\Contracts\Policy\Backoff;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -17,6 +18,12 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  * parameters masked (Redaction::text(), api_key=***), its exception wrapped
  * as a copy (Redaction::copy()), no trace keeping the arguments where the
  * options stood.
+ *
+ * Given the provider's Backoff (a factory's Config::backoff()), send() waits
+ * first - no request while the provider asked to wait - and reads every
+ * answer's Retry-After and RateLimit fields: a 429 is then a
+ * UsageLimitReachedException with the wait it asked for, and the next calls
+ * are held until it is over. Without one, a 429 stays an UnreachableException.
  */
 final readonly class Answer
 {
@@ -30,8 +37,9 @@ final readonly class Answer
     }
 
     /** @param array<string, mixed> $options the HTTP client's options: body, json, query, headers, timeout */
-    public static function send(HttpClientInterface $http, string $provider, string $method, string $url, array $options = []): self
+    public static function send(HttpClientInterface $http, string $provider, string $method, string $url, array $options = [], ?Backoff $backoff = null): self
     {
+        $backoff?->clear();
         try {
             $response = $http->request($method, $url, $options + ['timeout' => 10]);
             $status = $response->getStatusCode();
@@ -42,6 +50,7 @@ final readonly class Answer
 
             throw Redaction::withoutArguments(new UnreachableException($provider, 'No answer: '.Redaction::text($e->getMessage(), $secrets), null, Redaction::copy($e, $secrets)));
         }
+        $backoff?->observe($status, $headers);
         if ($status >= 500 || 429 === $status) {
             throw Redaction::withoutArguments(new UnreachableException($provider, \sprintf('HTTP %d: %s', $status, mb_substr(trim($body), 0, 200)), (string) $status));
         }
