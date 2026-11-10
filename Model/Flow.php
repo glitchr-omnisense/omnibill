@@ -35,7 +35,11 @@ final readonly class Flow
     ) {
     }
 
-    /** @param list<StatusChange>|null $history */
+    /**
+     * @param list<StatusChange>|null   $history
+     * @param list<string>|null         $errors
+     * @param array<string, mixed>|null $data
+     */
     public function with(?FlowState $state = null, ?LifecycleStatus $status = null, ?array $history = null, ?array $errors = null, ?\DateTimeImmutable $updatedAt = null, ?array $data = null): self
     {
         return new self($this->reference, $this->kind, $this->direction, $state ?? $this->state, $this->trackingId, $this->invoiceNumber, $this->submittedAt, $updatedAt ?? $this->updatedAt, $status ?? $this->status, $history ?? $this->history, $errors ?? $this->errors, $this->name, $data ?? $this->data);

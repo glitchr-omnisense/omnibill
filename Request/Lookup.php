@@ -18,6 +18,8 @@ final class Lookup extends Request
     /** @return list<Addressing>|null */
     public function getAddressings(): ?array
     {
-        return $this->getResult();
+        $result = $this->getResult();
+
+        return \is_array($result) ? array_values(array_filter($result, static fn (mixed $one): bool => $one instanceof Addressing)) : null;
     }
 }

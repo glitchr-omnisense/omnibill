@@ -31,7 +31,7 @@ final class StubFactory extends GatewayFactory
             'omnibill.required_options' => ['host'],
             'silent' => false,
             'omnibill.capabilities' => new Capabilities(approved: true),
-            'omnibill.api' => static fn (Config $c) => new StubApi((string) $c['host']),
+            'omnibill.api' => static fn (Config $c) => new StubApi(\is_string($host = $c['host']) ? $host : ''),
             'omnibill.action.submit' => new StubAction(Submit::class),
             'omnibill.action.fetch' => static fn (Config $c) => $c['silent'] ? null : new StubAction(FetchStatus::class),
             'omnibill.action.set' => static fn (Config $c) => $c['silent'] ? null : new StubAction(SetStatus::class),
@@ -75,7 +75,7 @@ final class StubAction implements ActionInterface, ApiAwareInterface
         } elseif ($request instanceof FetchStatus) {
             $history = $this->api->flows[$request->flow->reference] ?? [];
             $request->setResult($request->flow->with(status: $history ? $history[array_key_last($history)]->status : null, history: $history));
-        } elseif ($request instanceof SetStatus) {
+        } elseif ($request instanceof SetStatus && null !== $request->flow) {
             $this->api->flows[$request->flow->reference][] = $request->change;
             $request->setResult($request->flow->with(status: $request->change->status, history: $this->api->flows[$request->flow->reference]));
         }

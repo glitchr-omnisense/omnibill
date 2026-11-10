@@ -13,6 +13,8 @@ final class FetchStatus extends Request
 
     public function getFlow(): ?Flow
     {
-        return $this->getResult();
+        $result = $this->getResult();
+
+        return $result instanceof Flow ? $result : null;
     }
 }

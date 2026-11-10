@@ -40,15 +40,19 @@ final class BareTest extends TestCase
         $report = self::report();
 
         self::assertFalse($report['live']);
-        self::assertContains(Registry::class, $report['symbols'], 'the registry was built there');
-        self::assertSame([], self::framework($report), 'no class nor file of a framework');
-        $symfony = array_values(array_unique(array_map(static fn (string $s) => implode('\\', \array_slice(explode('\\', $s), 0, 3)), preg_grep('~^Symfony\\\\(?!Polyfill)~', $report['symbols']))));
+        self::assertContains(Registry::class, self::strings($report, 'symbols'), 'the registry was built there');
+        self::assertSame([], self::framework(self::loaded($report)), 'no class nor file of a framework');
+        $symfony = array_values(array_unique(array_map(static fn (string $s): string => implode('\\', \array_slice(explode('\\', $s), 0, 3)), self::matching('~^Symfony\\\\(?!Polyfill)~', self::strings($report, 'symbols')))));
         self::assertSame([], array_diff($symfony, ['Symfony\\Component\\HttpClient', 'Symfony\\Component\\Mailer', 'Symfony\\Component\\Mime', 'Symfony\\Contracts\\HttpClient', 'Symfony\\Contracts\\Service', 'Symfony\\Contracts\\EventDispatcher']), 'of Symfony, libraries alone');
-        $installed = array_values(array_filter(array_column(require __DIR__.'/../docker/harness/plugins.php', 1), 'class_exists'));
+        $plugins = require __DIR__.'/../docker/harness/plugins.php';
+        self::assertIsArray($plugins);
+        $installed = array_values(array_filter(array_column($plugins, 1), static fn (mixed $factory): bool => \is_string($factory) && class_exists($factory)));
         foreach ($installed as $factory) {
-            self::assertContains($factory, $report['symbols'], 'every gateway package installed, its factory built');
+            self::assertContains($factory, self::strings($report, 'symbols'), 'every gateway package installed, its factory built');
         }
-        self::assertCount(\count($installed), $report['gateways']);
+        $gateways = self::at($report, 'gateways');
+        self::assertIsArray($gateways);
+        self::assertCount(\count($installed), $gateways);
     }
 
     public function testAnInvoiceGoesThroughEachGateway(): void
@@ -56,16 +60,18 @@ final class BareTest extends TestCase
         $report = self::report();
 
         if (isset($report['email'])) {
-            self::assertSame(['sent', 'compta@erable.example', 'Facture F-2026-042', ['F-2026-042.pdf', 'application/pdf'], ['sent', 'paid']], [$report['email']['status'], $report['email']['to'], $report['email']['subject'], $report['email']['attachment'], $report['email']['history']]);
+            self::assertSame(['sent', 'compta@erable.example', 'Facture F-2026-042', ['F-2026-042.pdf', 'application/pdf'], ['sent', 'paid']], [self::at($report, 'email', 'status'), self::at($report, 'email', 'to'), self::at($report, 'email', 'subject'), self::at($report, 'email', 'attachment'), self::at($report, 'email', 'history')]);
         }
         if (isset($report['afnor'])) {
-            self::assertSame(['accepted', 'deposited'], $report['afnor']['acknowledged']);
-            self::assertSame(['FA-77.xml'], $report['afnor']['received_invoices']);
-            self::assertSame([['F-2026-042', 'paid']], $report['afnor']['received_statuses']);
-            self::assertCount(2, $report['afnor']['directory']);
+            self::assertSame(['accepted', 'deposited'], self::at($report, 'afnor', 'acknowledged'));
+            self::assertSame(['FA-77.xml'], self::at($report, 'afnor', 'received_invoices'));
+            self::assertSame([['F-2026-042', 'paid']], self::at($report, 'afnor', 'received_statuses'));
+            $directory = self::at($report, 'afnor', 'directory');
+            self::assertIsArray($directory);
+            self::assertCount(2, $directory);
         }
         if (isset($report['chorus-pro'])) {
-            self::assertSame(['accepted', 'made_available', 'MISE_A_DISPOSITION'], $report['chorus-pro']['status']);
+            self::assertSame(['accepted', 'made_available', 'MISE_A_DISPOSITION'], self::at($report, 'chorus-pro', 'status'));
         }
         self::assertNotEmpty(array_intersect(['email', 'afnor', 'chorus-pro'], array_keys($report)), 'at least one gateway package is installed beside this one');
     }
@@ -117,7 +123,7 @@ final class BareTest extends TestCase
         [$status, $report] = self::php(['-r', 'require getenv("OMNIBILL_AUTOLOAD"); class_exists($argv[1]) || exit(2); echo json_encode(["symbols" => [...get_declared_classes(), ...get_declared_interfaces(), ...get_declared_traits()], "files" => get_included_files()]);', '--', OmnibillBundle::class]);
 
         self::assertSame(0, $status);
-        $framework = self::framework($report);
+        $framework = self::framework(self::loaded($report));
         self::assertContains(AbstractBundle::class, $framework);
         self::assertNotEmpty(preg_grep('~/symfony/http-kernel/~', $framework));
     }
@@ -132,9 +138,47 @@ final class BareTest extends TestCase
         // Composer includes every installed package's "files" (installed for the
         // bridge's tests) before anything runs: loaded by the autoloader, not by Omnibill.
         $eager = require \dirname((string) (new \ReflectionClass(\Composer\Autoload\ClassLoader::class))->getFileName()).'/autoload_files.php';
-        $files = array_diff(array_map('realpath', $report['files']), array_map('realpath', array_values($eager)));
+        $eager = \is_array($eager) ? array_values(array_filter($eager, 'is_string')) : [];
+        $real = static fn (string $file): string => realpath($file) ?: $file;
+        $files = array_diff(array_map($real, $report['files']), array_map($real, $eager));
 
-        return [...array_values(preg_grep(self::FRAMEWORK, $report['symbols'])), ...array_values(preg_grep(self::FRAMEWORK_FILES, $files))];
+        return [...self::matching(self::FRAMEWORK, $report['symbols']), ...self::matching(self::FRAMEWORK_FILES, $files)];
+    }
+
+    /**
+     * @param array<string> $strings
+     *
+     * @return list<string> those $pattern matches
+     */
+    private static function matching(string $pattern, array $strings): array
+    {
+        return array_values(array_filter($strings, static fn (string $s): bool => 1 === preg_match($pattern, $s)));
+    }
+
+    /**
+     * A list of strings in the report; empty when it is not there.
+     *
+     * @param array<string, mixed> $report
+     *
+     * @return list<string>
+     */
+    private static function strings(array $report, string $key): array
+    {
+        $value = $report[$key] ?? [];
+
+        return \is_array($value) ? array_values(array_filter($value, 'is_string')) : [];
+    }
+
+    /**
+     * What PHP loaded, as the report says it.
+     *
+     * @param array<string, mixed> $report
+     *
+     * @return array{symbols: list<string>, files: list<string>}
+     */
+    private static function loaded(array $report): array
+    {
+        return ['symbols' => self::strings($report, 'symbols'), 'files' => self::strings($report, 'files')];
     }
 
     /**
@@ -154,7 +198,11 @@ final class BareTest extends TestCase
         $status = proc_close($process);
         $report = json_decode($out, true);
         self::assertIsArray($report, 'PHP exited '.$status.': '.$err.$out);
+        $object = [];
+        foreach ($report as $key => $value) {
+            $object[(string) $key] = $value;
+        }
 
-        return [$status, $report];
+        return [$status, $object];
     }
 }

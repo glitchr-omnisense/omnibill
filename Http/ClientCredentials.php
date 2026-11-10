@@ -26,9 +26,10 @@ final class ClientCredentials
     ) {
     }
 
+    /** @phpstan-impure asked again once the token lapses */
     public function token(): string
     {
-        $now = $this->clock ? ($this->clock)() : time();
+        $now = $this->now();
         if (null !== $this->token && $now < $this->expires) {
             return $this->token;
         }
@@ -40,11 +41,14 @@ final class ClientCredentials
         ])]);
         if (\in_array($answer->status, [400, 401, 403], true)) {
             $error = json_decode($answer->body, true);
-            throw new InvalidKeyException($this->provider, \sprintf('The client credentials were refused (HTTP %d): %s', $answer->status, \is_array($error) ? ($error['error_description'] ?? $error['error'] ?? 'no reason given') : mb_substr(trim($answer->body), 0, 200)), \is_array($error) ? ($error['error'] ?? null) : null);
+            $code = \is_array($error) && \is_scalar($error['error'] ?? null) ? (string) $error['error'] : null;
+            $reason = \is_array($error) ? ($error['error_description'] ?? $code ?? 'no reason given') : mb_substr(trim($answer->body), 0, 200);
+            throw new InvalidKeyException($this->provider, \sprintf('The client credentials were refused (HTTP %d): %s', $answer->status, \is_scalar($reason) ? (string) $reason : 'no reason given'), $code);
         }
         $data = $answer->json();
-        $this->token = (string) ($data['access_token'] ?? throw new InvalidKeyException($this->provider, 'The token endpoint gave no access_token.'));
-        $this->expires = $now + max(0, (int) ($data['expires_in'] ?? 3600) - 60);
+        $token = $data['access_token'] ?? null;
+        $this->token = \is_scalar($token) ? (string) $token : throw new InvalidKeyException($this->provider, 'The token endpoint gave no access_token.');
+        $this->expires = $now + max(0, (is_numeric($expires = $data['expires_in'] ?? 3600) ? (int) $expires : 3600) - 60);
 
         return $this->token;
     }
@@ -53,5 +57,12 @@ final class ClientCredentials
     public function reset(): void
     {
         $this->token = null;
+    }
+
+    private function now(): int
+    {
+        $now = null === $this->clock ? null : ($this->clock)();
+
+        return is_numeric($now) ? (int) $now : time();
     }
 }

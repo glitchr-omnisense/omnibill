@@ -16,10 +16,10 @@ final class ClientCredentialsTest extends TestCase
         $now = 1_000_000;
         $calls = [];
         $http = new MockHttpClient(function (string $method, string $url, array $options) use (&$calls): MockResponse {
-            parse_str((string) $options['body'], $body);
+            parse_str(\is_string($options['body'] ?? null) ? $options['body'] : '', $body);
             $calls[] = $body;
 
-            return new MockResponse(json_encode(['access_token' => 't'.\count($calls), 'token_type' => 'Bearer', 'expires_in' => 3600]));
+            return new MockResponse((string) json_encode(['access_token' => 't'.\count($calls), 'token_type' => 'Bearer', 'expires_in' => 3600]));
         });
         $credentials = new ClientCredentials($http, 'p', 'https://auth.example/token', 'id', 'secret', 'openid', static function () use (&$now): int { return $now; });
 

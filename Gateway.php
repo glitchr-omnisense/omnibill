@@ -79,37 +79,37 @@ final class Gateway implements GatewayInterface, JournalEntriesInterface, Contac
 
     public function submit(Invoice $invoice, ?string $trackingId = null): Flow
     {
-        return $this->execute(new Request\Submit($invoice, $trackingId))->getFlow();
+        return $this->execute(new Request\Submit($invoice, $trackingId))->getFlow() ?? throw new ProviderException($this->name, 'No flow answered.');
     }
 
     public function fetchStatus(Flow $flow): Flow
     {
-        return $this->execute(new Request\FetchStatus($flow))->getFlow();
+        return $this->execute(new Request\FetchStatus($flow))->getFlow() ?? throw new ProviderException($this->name, 'No flow answered.');
     }
 
     public function receive(?string $cursor = null, int $limit = 25): Inbox
     {
-        return $this->execute(new Request\Receive($cursor, $limit))->getInbox();
+        return $this->execute(new Request\Receive($cursor, $limit))->getInbox() ?? throw new ProviderException($this->name, 'No inbox answered.');
     }
 
     public function setStatus(StatusChange $change, ?Flow $flow = null): Flow
     {
-        return $this->execute(new Request\SetStatus($change, $flow))->getFlow();
+        return $this->execute(new Request\SetStatus($change, $flow))->getFlow() ?? throw new ProviderException($this->name, 'No flow answered.');
     }
 
     public function lookup(string $identifier): array
     {
-        return $this->execute(new Request\Lookup($identifier))->getAddressings();
+        return $this->execute(new Request\Lookup($identifier))->getAddressings() ?? throw new ProviderException($this->name, 'No addressings answered.');
     }
 
     public function report(EReport $report, ?string $trackingId = null): Flow
     {
-        return $this->execute(new Request\Report($report, $trackingId))->getFlow();
+        return $this->execute(new Request\Report($report, $trackingId))->getFlow() ?? throw new ProviderException($this->name, 'No flow answered.');
     }
 
     public function notify(string $body, array $headers = []): Notification
     {
-        return $this->execute(new Request\Notify($body, $headers))->getNotification();
+        return $this->execute(new Request\Notify($body, $headers))->getNotification() ?? throw new ProviderException($this->name, 'No notification answered.');
     }
 
     public function postEntry(JournalEntry $entry): JournalEntry

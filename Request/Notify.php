@@ -30,6 +30,8 @@ final class Notify extends Request
 
     public function getNotification(): ?Notification
     {
-        return $this->getResult();
+        $result = $this->getResult();
+
+        return $result instanceof Notification ? $result : null;
     }
 }

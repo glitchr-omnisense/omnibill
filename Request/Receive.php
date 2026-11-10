@@ -17,6 +17,8 @@ final class Receive extends Request
 
     public function getInbox(): ?Inbox
     {
-        return $this->getResult();
+        $result = $this->getResult();
+
+        return $result instanceof Inbox ? $result : null;
     }
 }

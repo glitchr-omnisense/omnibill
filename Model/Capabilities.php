@@ -51,6 +51,13 @@ final readonly class Capabilities
     /** @return array<string, mixed> */
     public function toArray(): array
     {
-        return ['syntaxes' => array_map(static fn (Syntax $s) => $s->value, $this->syntaxes), 'terms' => $this->terms?->toArray()] + get_object_vars($this);
+        return [
+            'syntaxes' => array_map(static fn (Syntax $s) => $s->value, $this->syntaxes),
+            'terms' => $this->terms?->toArray(),
+            'approved' => $this->approved,
+            'publicSector' => $this->publicSector,
+            'maxSize' => $this->maxSize,
+            'contracts' => $this->contracts,
+        ];
     }
 }

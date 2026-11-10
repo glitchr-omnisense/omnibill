@@ -66,6 +66,11 @@ final readonly class Answer
             throw new ProviderException($this->provider, \sprintf('HTTP %d, not a JSON object: %s', $this->status, mb_substr(trim($this->body), 0, 200)));
         }
 
-        return $data;
+        $object = [];
+        foreach ($data as $key => $value) {
+            $object[(string) $key] = $value;
+        }
+
+        return $object;
     }
 }

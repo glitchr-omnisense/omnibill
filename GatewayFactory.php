@@ -21,13 +21,14 @@ abstract class GatewayFactory implements GatewayFactoryInterface
 {
     public function getName(): string
     {
-        return $this->createConfig()['omnibill.factory_name'];
+        return self::text($this->createConfig(), 'omnibill.factory_name');
     }
 
     public function create(array $options = []): GatewayInterface
     {
         $config = $this->createConfig($options);
-        $config->validateNotEmpty($config->get('omnibill.required_options', []));
+        $required = $config->get('omnibill.required_options', []);
+        $config->validateNotEmpty(\is_array($required) ? array_values(array_filter($required, 'is_string')) : []);
 
         $api = $config->get('omnibill.api');
         if ($api instanceof \Closure) {
@@ -38,7 +39,7 @@ abstract class GatewayFactory implements GatewayFactoryInterface
             $capabilities = $capabilities($config);
         }
         if (!$capabilities instanceof Capabilities) {
-            throw new InvalidConfigException(\sprintf('The "%s" factory does not say what it carries (omnibill.capabilities).', $config['omnibill.factory_name']));
+            throw new InvalidConfigException(\sprintf('The "%s" factory does not say what it carries (omnibill.capabilities).', self::text($config, 'omnibill.factory_name')));
         }
 
         $actions = [];
@@ -52,15 +53,16 @@ abstract class GatewayFactory implements GatewayFactoryInterface
             if (!$action instanceof ActionInterface) {
                 continue;
             }
-            if ($action instanceof ApiAwareInterface && null !== $api) {
+            if ($action instanceof ApiAwareInterface && \is_object($api)) {
                 $action->setApi($api);
             }
             $actions[] = $action;
         }
 
-        return new Gateway($config['omnibill.factory_name'], $config['omnibill.factory_title'], $capabilities, $actions);
+        return new Gateway(self::text($config, 'omnibill.factory_name'), self::text($config, 'omnibill.factory_title'), $capabilities, $actions);
     }
 
+    /** @param array<string, mixed> $options */
     public function createConfig(array $options = []): Config
     {
         $config = new Config($options);
@@ -70,4 +72,12 @@ abstract class GatewayFactory implements GatewayFactoryInterface
     }
 
     abstract protected function populateConfig(Config $config): void;
+
+    /** A key the factory fills ("omnibill.factory_name"), as a string. */
+    private static function text(Config $config, string $key): string
+    {
+        $value = $config->get($key);
+
+        return \is_scalar($value) ? (string) $value : '';
+    }
 }

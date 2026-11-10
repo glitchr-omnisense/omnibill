@@ -10,6 +10,7 @@ use Omnibill\Registry;
 use Omnibill\Tests\StubFactory;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\HttpClient\MockHttpClient;
 
 final class OmnibillBundleTest extends TestCase
@@ -20,7 +21,7 @@ final class OmnibillBundleTest extends TestCase
         $container->register('http_client', MockHttpClient::class);
         $container->register(StubFactory::class)->setAutoconfigured(true);
         $container->register(Accounting::class)->setAutowired(true)->setPublic(true);
-        $container->registerExtension((new OmnibillBundle())->getContainerExtension());
+        $container->registerExtension(self::extension());
         $container->loadFromExtension('omnibill', ['gateways' => [
             'platform' => ['factory' => 'stub', 'options' => ['host' => 'pa.example']],
             'other' => ['factory' => 'stub', 'options' => ['host' => 'other.example']],
@@ -28,8 +29,10 @@ final class OmnibillBundleTest extends TestCase
         $container->compile();
 
         $registry = $container->get(Registry::class);
+        self::assertInstanceOf(Registry::class, $registry);
         self::assertSame(['platform', 'other'], array_keys($registry->all()));
         $accounting = $container->get(Accounting::class);
+        self::assertInstanceOf(Accounting::class, $accounting);
         self::assertStringStartsWith('pa.example/', $accounting->platform->submit(new Invoice('x', 'x.xml', Syntax::CII))->reference);
         self::assertStringStartsWith('other.example/', $accounting->other->submit(new Invoice('x', 'x.xml', Syntax::CII))->reference);
     }
@@ -41,13 +44,22 @@ final class OmnibillBundleTest extends TestCase
         }
         $container = new ContainerBuilder();
         $container->register('http_client', MockHttpClient::class);
-        $container->registerExtension((new OmnibillBundle())->getContainerExtension());
+        $container->registerExtension(self::extension());
         $container->loadFromExtension('omnibill', ['gateways' => ['platform' => ['factory' => 'afnor', 'options' => ['flow_url' => 'https://pa.example/flow-service', 'token_url' => 'https://pa.example/token', 'client_id' => 'id', 'client_secret' => 's']]]]);
         $container->compile();
 
         $registry = $container->get(Registry::class);
+        self::assertInstanceOf(Registry::class, $registry);
         self::assertContains('afnor', $registry->factories());
         self::assertTrue($registry->get('platform')->capabilities()->approved);
+    }
+
+    private static function extension(): ExtensionInterface
+    {
+        $extension = (new OmnibillBundle())->getContainerExtension();
+        self::assertNotNull($extension);
+
+        return $extension;
     }
 }
 

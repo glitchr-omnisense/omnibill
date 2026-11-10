@@ -12,7 +12,11 @@ use Omnibill\Exception\InvalidConfigException;
  */
 final class Config extends \ArrayObject
 {
-    /** Sets each key not set yet. */
+    /**
+     * Sets each key not set yet.
+     *
+     * @param array<string, mixed> $defaults
+     */
     public function defaults(array $defaults): self
     {
         foreach ($defaults as $key => $value) {
@@ -29,7 +33,7 @@ final class Config extends \ArrayObject
     {
         $missing = array_values(array_filter($keys, fn (string $key) => !isset($this[$key]) || '' === $this[$key] || [] === $this[$key]));
         if ($missing) {
-            throw new InvalidConfigException(\sprintf('The "%s" gateway needs: %s.', $this['omnibill.factory_name'] ?? '?', implode(', ', $missing)));
+            throw new InvalidConfigException(\sprintf('The "%s" gateway needs: %s.', $this->name(), implode(', ', $missing)));
         }
     }
 
@@ -46,7 +50,7 @@ final class Config extends \ArrayObject
     {
         $value = $this->get($key);
 
-        return \is_bool($value) ? $value : \in_array(strtolower(trim((string) $value)), ['1', 'true', 'yes', 'on'], true);
+        return \is_bool($value) ? $value : \is_scalar($value) && \in_array(strtolower(trim((string) $value)), ['1', 'true', 'yes', 'on'], true);
     }
 
     /**
@@ -59,7 +63,7 @@ final class Config extends \ArrayObject
     {
         $list = [];
         foreach ((array) $this->get($key, []) as $value) {
-            foreach (explode(',', (string) $value) as $one) {
+            foreach (\is_scalar($value) ? explode(',', (string) $value) : [] as $one) {
                 if ('' !== trim($one)) {
                     $list[] = trim($one);
                 }
@@ -67,5 +71,13 @@ final class Config extends \ArrayObject
         }
 
         return $list;
+    }
+
+    /** The factory's name ("omnibill.factory_name"), "?" while it is not set. */
+    private function name(): string
+    {
+        $name = $this->get('omnibill.factory_name');
+
+        return \is_scalar($name) && '' !== (string) $name ? (string) $name : '?';
     }
 }
