@@ -23,7 +23,14 @@
  * OMNIBILL_AUTOLOAD names another autoloader than the harness's.
  */
 
+use Omnibill\Model\Address;
+use Omnibill\Model\Contact;
+use Omnibill\Model\ContactKind;
+use Omnibill\Model\EntryLine;
 use Omnibill\Model\Invoice;
+use Omnibill\Model\JournalEntry;
+use Omnibill\Model\Vat;
+use Omnibill\Model\VatKind;
 use Omnibill\Model\LifecycleStatus;
 use Omnibill\Model\Party;
 use Omnibill\Model\StatusChange;
@@ -78,7 +85,9 @@ foreach (require __DIR__.'/../config/gateways.php' as $name => $gateway) {
 }
 $registry = new Registry($factories, $config);
 
-$operations = ['submit' => Request\Submit::class, 'fetch' => Request\FetchStatus::class, 'receive' => Request\Receive::class, 'set' => Request\SetStatus::class, 'lookup' => Request\Lookup::class, 'report' => Request\Report::class, 'notify' => Request\Notify::class];
+$operations = ['submit' => Request\Submit::class, 'fetch' => Request\FetchStatus::class, 'receive' => Request\Receive::class, 'set' => Request\SetStatus::class, 'lookup' => Request\Lookup::class, 'report' => Request\Report::class, 'notify' => Request\Notify::class,
+    'post-entry' => Request\Accounting\PostEntry::class, 'fetch-entry' => Request\Accounting\FetchEntry::class, 'entries' => Request\Accounting\ListEntries::class,
+    'save-contact' => Request\Accounting\SaveContact::class, 'fetch-contact' => Request\Accounting\FetchContact::class, 'contacts' => Request\Accounting\ListContacts::class];
 $report = ['live' => $live && $outbox !== $transport, 'gateways' => []];
 foreach ($registry->all() as $name => $gateway) {
     $report['gateways'][$name] = ['title' => $gateway->getTitle(), 'does' => array_keys(array_filter($operations, static fn (string $r) => $gateway->supports($r)))] + $gateway->capabilities()->toArray();
@@ -125,6 +134,29 @@ if ($registry->has('chorus-pro')) {
     $report['chorus-pro'] = ['deposited' => $flow->reference, 'status' => [$now->state->value, $now->status?->value, $now->history[0]->code ?? null]];
 }
 
+// The books: an electricity bill as omnibase/ledger's EntryDraft writes it (615 and its VAT on 44566, the supplier on 401EDF),
+// posted and read back, the supplier saved, through each gateway that keeps books.
+$bill = new JournalEntry('AC', new DateTimeImmutable('2026-11-10'), 'Électricité novembre', [
+    new EntryLine('615', 10000, 0, vat: new Vat(2000, VatKind::DEDUCTIBLE, code: 'A20')),
+    new EntryLine('44566', 2000, 0, 'TVA 20 %', vat: new Vat(2000, VatKind::DEDUCTIBLE, 10000, 'A20')),
+    new EntryLine('401EDF', 0, 12000, 'Électricité novembre', 'supplier:edf'),
+], 'EDF-2026-11', 'bill:edf-2026-11');
+$edf = new Contact(ContactKind::SUPPLIER, 'EDF', 'supplier:edf', '401EDF', 'factures@edf.example', '552081317', '55208131766522', address: new Address('22-30 avenue de Wagram', '75008', 'Paris'));
+foreach ($registry->all() as $name => $gateway) {
+    if (!$gateway->supports(Request\Accounting\PostEntry::class)) {
+        continue;
+    }
+    $books = $registry->journalEntries($name);
+    $posted = $books->postEntry($bill);
+    $fetched = $books->fetchEntry($posted);
+    $supplier = $registry->contacts($name)->saveContact($edf);
+    $report['books'][$name] = [
+        'posted' => [$posted->reference, $posted->number, $posted->status->value],
+        'fetched' => [$fetched->journal, count($fetched->lines), $fetched->isBalanced(), $fetched->totalDebit()],
+        'supplier' => $supplier->reference,
+    ];
+}
+
 // What PHP loaded to get there: the proof that no framework was needed.
 $report['symbols'] = [...get_declared_classes(), ...get_declared_interfaces(), ...get_declared_traits()];
 $report['files'] = get_included_files();
@@ -139,7 +171,7 @@ if (in_array('--json', $argv, true)) {
 
 echo "Omnibill in bare PHP: the registry built by hand, no bundle, no container; the platforms' recorded answers.\n\n";
 foreach ($report['gateways'] as $name => $g) {
-    printf("  %-11s %s: carries %s; approved platform %s, public sector %s; does %s\n", $name, $g['title'], implode(', ', $g['syntaxes']), $g['approved'] ? 'yes' : 'no', $g['publicSector'] ? 'yes' : 'no', implode(' ', $g['does']));
+    printf("  %-11s %s: %s; carries %s; approved platform %s, public sector %s; does %s\n", $name, $g['title'], implode(', ', $g['contracts']), implode(', ', $g['syntaxes']) ?: 'no invoice', $g['approved'] ? 'yes' : 'no', $g['publicSector'] ? 'yes' : 'no', implode(' ', $g['does']));
 }
 if ($e = $report['email'] ?? null) {
     printf("\nemail: \"%s\" to %s, %s attached (%s), through %s\n  statuses: %s\n", $e['subject'], $e['to'], $e['attachment'][0] ?? '-', $e['attachment'][1] ?? '-', $e['transport'], implode(' -> ', $e['history']));
@@ -149,6 +181,9 @@ if ($a = $report['afnor'] ?? null) {
 }
 if ($c = $report['chorus-pro'] ?? null) {
     printf("\nchorus-pro: deposited as %s; %s, %s (%s)\n", $c['deposited'], ...$c['status']);
+}
+foreach ($report['books'] ?? [] as $name => $b) {
+    printf("\n%s: entry %s posted (%s, %s); read back in %s, %d lines, balanced %s, %d cents; supplier saved as %s\n", $name, $b['posted'][0], $b['posted'][1] ?? 'no number yet', $b['posted'][2], $b['fetched'][0], $b['fetched'][1], $b['fetched'][2] ? 'yes' : 'no', $b['fetched'][3], $b['supplier']);
 }
 echo "\nLoaded from Symfony: ", implode(', ', $symfony) ?: 'nothing', "\n";
 // doctrine/lexer is no framework: a tokenizer egulias/email-validator (symfony/mime) reads addresses with.

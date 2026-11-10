@@ -3,6 +3,8 @@
 namespace Omnibill;
 
 use Omnibill\Exception\InvalidConfigException;
+use Omnibill\Exception\NotSupportedException;
+use Omnibill\Model\Capabilities;
 
 /**
  * The application's gateways by name, each built once from its factory and
@@ -90,5 +92,27 @@ final class Registry
     public function factories(): array
     {
         return array_keys($this->factories);
+    }
+
+    /** A gateway by name, as the journal-entries contract: NotSupportedException when it does not keep it. */
+    public function journalEntries(string $name): JournalEntriesInterface
+    {
+        $gateway = $this->get($name);
+        if (!$gateway instanceof JournalEntriesInterface || !$gateway->capabilities()->keeps(Capabilities::JOURNAL_ENTRIES)) {
+            throw new NotSupportedException(\sprintf('The "%s" gateway posts no journal entries.', $name));
+        }
+
+        return $gateway;
+    }
+
+    /** A gateway by name, as the contacts contract: NotSupportedException when it does not keep it. */
+    public function contacts(string $name): ContactsInterface
+    {
+        $gateway = $this->get($name);
+        if (!$gateway instanceof ContactsInterface || !$gateway->capabilities()->keeps(Capabilities::CONTACTS)) {
+            throw new NotSupportedException(\sprintf('The "%s" gateway keeps no contacts.', $name));
+        }
+
+        return $gateway;
     }
 }

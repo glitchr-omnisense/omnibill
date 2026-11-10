@@ -8,6 +8,12 @@ and gets the same answers back: a `Flow` to keep, an `Inbox`, a list of `Address
 e-mail), `omnibill/afnor` (any approved platform that implements the standard API of XP Z12-013),
 `omnibill/chorus-pro` (the public sector's portal, through PISTE).
 
+Since 1.1 it is "e-invoices and accounting": French accounting software doubles as approved
+platforms, so the family also hands **journal entries** and **customers and suppliers** to
+accounting software (`JournalEntriesInterface`, `ContactsInterface`: `omnibill/odoo`,
+`omnibill/pennylane`; [Accounting](usage-accounting.md)), its models mapping from `omnibase/ledger`.
+`Capabilities::$contracts` says which a gateway keeps; the e-invoices' contract is unchanged.
+
 ```php
 $gateway = $registry->get('invoices');
 
@@ -60,6 +66,14 @@ options set (the harness's `bare` lists them: [harness](harness.md)).
 | [`omnibill/afnor`](https://github.com/glitchr-omnisense/omnibill-afnor) | `afnor` | Factur-X, UBL, CII, CDAR, FRR; 100 MB | yes | yes | yes | yes (a CDAR file) | with `directory_url` | yes | with `webhook_key` | yes | yes |
 | [`omnibill/chorus-pro`](https://github.com/glitchr-omnisense/omnibill-chorus-pro) | `chorus-pro` | Factur-X, UBL, CII; 10 MB | yes | yes | - | - | - | - | - | no | yes |
 
+Accounting (since 1.1):
+
+| Package | Factory name | Contracts | Operations | Terms |
+|---|---|---|---|---|
+| [`omnibill/odoo`](https://github.com/glitchr-omnisense/omnibill-odoo) | `odoo` | journal-entries, contacts | post (or draft), fetch, list entries; save, fetch, list contacts | a user's API key; JSON-2 (Odoo 19+) |
+| [`omnibill/pennylane`](https://github.com/glitchr-omnisense/omnibill-pennylane) | `pennylane` | journal-entries, contacts | the same | internal use unless API partner |
+| `omnibill/xero`, `omnibill/quickbooks` | reserved | journal-entries, contacts | | |
+
 None of the three was run against its real service except the e-mail, sent through a local SMTP
 server ([Verified, and not](verified.md)).
 
@@ -71,7 +85,8 @@ server ([Verified, and not](verified.md)).
 - [Models](models.md): invoices, flows, statuses, inbox, addressing, every field.
 - [Gateways](gateways.md): the contract and what each gateway does with it.
 - Usage: [submitting and following](usage-submitting.md), [receiving and webhooks](usage-receiving.md),
-  [declaring statuses](usage-statuses.md), [the directory and e-reporting](usage-directory.md).
+  [declaring statuses](usage-statuses.md), [the directory and e-reporting](usage-directory.md),
+  [accounting: journal entries and contacts](usage-accounting.md).
 - [Configuration reference](configuration.md): every option of every factory.
 - [Errors](errors.md): the exceptions and when each is thrown.
 - [Testing](testing.md): testing an application that uses Omnibill.

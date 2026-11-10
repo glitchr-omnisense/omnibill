@@ -4,9 +4,13 @@ namespace Omnibill\Bridge\Symfony;
 
 use Omnibill\Afnor\AfnorGatewayFactory;
 use Omnibill\ChorusPro\ChorusProGatewayFactory;
+use Omnibill\ContactsInterface;
 use Omnibill\Email\EmailGatewayFactory;
 use Omnibill\GatewayFactoryInterface;
 use Omnibill\GatewayInterface;
+use Omnibill\JournalEntriesInterface;
+use Omnibill\Odoo\OdooGatewayFactory;
+use Omnibill\Pennylane\PennylaneGatewayFactory;
 use Omnibill\Registry;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -18,7 +22,8 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 
 /**
  * Omnibill in a Symfony application: the gateway packages installed
- * (omnibill/email, omnibill/afnor, omnibill/chorus-pro) registered, the
+ * (omnibill/email, omnibill/afnor, omnibill/chorus-pro, omnibill/odoo,
+ * omnibill/pennylane) registered, the
  * gateways built from configuration and injectable by their name:
  *
  *     omnibill:
@@ -50,7 +55,7 @@ final class OmnibillBundle extends AbstractBundle
     protected string $extensionAlias = 'omnibill';
 
     /** The gateway packages this bundle knows, registered when installed. */
-    private const FACTORIES = [EmailGatewayFactory::class, AfnorGatewayFactory::class, ChorusProGatewayFactory::class];
+    private const FACTORIES = [EmailGatewayFactory::class, AfnorGatewayFactory::class, ChorusProGatewayFactory::class, OdooGatewayFactory::class, PennylaneGatewayFactory::class];
 
     public function configure(DefinitionConfigurator $definition): void
     {
@@ -94,6 +99,11 @@ final class OmnibillBundle extends AbstractBundle
             $id = 'omnibill.gateway.'.$name;
             $services->set($id, GatewayInterface::class)->factory([service(Registry::class), 'get'])->args([$name]);
             $builder->registerAliasForArgument($id, GatewayInterface::class, $name);
+            // Since 1.1: the accounting contracts, by name too (Registry::journalEntries(), contacts()).
+            $services->set('omnibill.journal_entries.'.$name, JournalEntriesInterface::class)->factory([service(Registry::class), 'journalEntries'])->args([$name]);
+            $builder->registerAliasForArgument('omnibill.journal_entries.'.$name, JournalEntriesInterface::class, $name);
+            $services->set('omnibill.contacts.'.$name, ContactsInterface::class)->factory([service(Registry::class), 'contacts'])->args([$name]);
+            $builder->registerAliasForArgument('omnibill.contacts.'.$name, ContactsInterface::class, $name);
         }
     }
 }

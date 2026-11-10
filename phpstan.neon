@@ -1,0 +1,14 @@
+# PHPStan at the highest level, as glitchr-studio/ci's workflow runs it. The baseline holds the 91
+# findings of the code written before 1.1 (taken on 2026-11-10, before the journal-entries and
+# contacts contracts) and nothing else: anything new PHPStan reports fails. It shrinks, never grows.
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: max
+    paths:
+        - .
+    excludePaths:
+        - vendor (?)
+        - docker (?)
+        - Tests/Fixtures (?)

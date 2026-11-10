@@ -70,6 +70,44 @@ final class BareTest extends TestCase
         self::assertNotEmpty(array_intersect(['email', 'afnor', 'chorus-pro'], array_keys($report)), 'at least one gateway package is installed beside this one');
     }
 
+    public function testTheBooksGoThroughEachGatewayThatKeepsThem(): void
+    {
+        $report = self::report();
+        $books = 0;
+        foreach (['odoo' => ['42', 'ACH/2026/11/0001', 'posted'], 'pennylane' => ['610042', 'EDF-2026-11', 'draft']] as $name => $posted) {
+            if (null === self::at($report, 'gateways', $name)) {
+                continue;
+            }
+            ++$books;
+            self::assertSame($posted, self::at($report, 'books', $name, 'posted'), $name);
+            self::assertSame(['AC', 3, true, 12000], self::at($report, 'books', $name, 'fetched'), $name);
+            self::assertNotNull(self::at($report, 'books', $name, 'supplier'), $name);
+            self::assertSame(['journal-entries', 'contacts'], self::at($report, 'gateways', $name, 'contracts'), $name);
+        }
+        if (0 === $books) {
+            self::markTestSkipped('Neither omnibill/odoo nor omnibill/pennylane is installed.');
+        }
+        self::assertNull(self::at($report, 'books', 'afnor'), 'an e-invoicing gateway keeps no books');
+    }
+
+    /**
+     * A value deep in the report, null when a key is missing on the way.
+     *
+     * @param array<string, mixed> $report
+     */
+    private static function at(array $report, string ...$keys): mixed
+    {
+        $value = $report;
+        foreach ($keys as $key) {
+            if (!\is_array($value) || !\array_key_exists($key, $value)) {
+                return null;
+            }
+            $value = $value[$key];
+        }
+
+        return $value;
+    }
+
     /** The check is not blind: the same report, once the bundle is loaded, names the framework. */
     public function testTheBundleDoesLoadTheFramework(): void
     {

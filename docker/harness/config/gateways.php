@@ -29,4 +29,16 @@ return [
         'options' => ['client_id' => $env('PISTE_CLIENT_ID'), 'client_secret' => $env('PISTE_CLIENT_SECRET'), 'login' => $env('CPRO_LOGIN'), 'password' => $env('CPRO_PASSWORD'), 'sandbox' => $env('CPRO_SANDBOX', '1')],
         'example' => ['client_id' => 'piste-app', 'client_secret' => 'example', 'login' => 'TECH_1_atelier@cpro.fr', 'password' => 'example', 'sandbox' => true],
     ],
+    'odoo' => [
+        'factory' => 'odoo',
+        'needs' => ['ODOO_URL', 'ODOO_API_KEY'],
+        'options' => ['url' => $env('ODOO_URL'), 'api_key' => $env('ODOO_API_KEY'), 'database' => $env('ODOO_DATABASE'), 'company_id' => $env('ODOO_COMPANY_ID')],
+        'example' => ['url' => 'https://meyers.odoo.example', 'api_key' => 'example', 'database' => 'meyers'],
+    ],
+    'pennylane' => [
+        'factory' => 'pennylane',
+        'needs' => ['PENNYLANE_TOKEN'],
+        'options' => ['token' => $env('PENNYLANE_TOKEN'), 'company_id' => $env('PENNYLANE_COMPANY_ID')],
+        'example' => ['token' => 'example'],
+    ],
 ];

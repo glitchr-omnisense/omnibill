@@ -19,6 +19,7 @@ docker compose run --rm omnibill bare
 | `bare` | plain PHP: the registry built by hand, an invoice through each gateway, what PHP loaded |
 | `bare --live` | the same, the e-mail sent for real through `MAILER_DSN` |
 | `bare --json` | the same, whole: every class and file loaded |
+| `phpstan` | PHPStan at level max on the core and on each provider's checkout that has a `phpstan.neon` (since 1.1) |
 | `test` | every package's tests |
 
 ## Bare: no bundle, no container

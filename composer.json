@@ -1,7 +1,7 @@
 {
     "name": "omnisense/omnibill",
     "type": "library",
-    "description": "Omnibill: one contract for transmitting and receiving electronic invoices - submit a conformant file (Factur-X, UBL, CII), follow its lifecycle statuses, receive suppliers' invoices, declare a status, look a company up in the directory, transmit e-reporting - whoever carries it: an e-mail (omnibill/email), an approved platform's standard API XP Z12-013 (omnibill/afnor), Chorus Pro (omnibill/chorus-pro); and its Symfony bundle.",
+    "description": "Omnibill: one contract for transmitting and receiving electronic invoices - submit a conformant file (Factur-X, UBL, CII), follow its lifecycle statuses, receive suppliers' invoices, declare a status, look a company up in the directory, transmit e-reporting - whoever carries it: an e-mail (omnibill/email), an approved platform's standard API XP Z12-013 (omnibill/afnor), Chorus Pro (omnibill/chorus-pro); and its Symfony bundle - and, since 1.1, accounting: journal entries posted and read back, customers and suppliers, in Odoo (omnibill/odoo) or Pennylane (omnibill/pennylane).",
     "keywords": [
         "invoice",
         "e-invoicing",
@@ -9,6 +9,10 @@
         "factur-x",
         "xp-z12-013",
         "chorus-pro",
+        "accounting",
+        "journal-entries",
+        "odoo",
+        "pennylane",
         "omnibill"
     ],
     "homepage": "https://github.com/glitchr-omnisense/omnibill",
@@ -39,6 +43,8 @@
         "omnibill/email": "The invoice attached to an e-mail, its statuses kept by hand: the default gateway, and the tests'",
         "omnibill/afnor": "An approved platform (plateforme agréée) through the standard API XP Z12-013: flows and directory",
         "omnibill/chorus-pro": "Chorus Pro through PISTE: invoices to the public sector",
+        "omnibill/odoo": "Odoo 19+: journal entries and contacts through the JSON-2 API",
+        "omnibill/pennylane": "Pennylane: ledger entries, customers and suppliers through the Company API v2",
         "symfony/config": "In a Symfony application: the configuration of Omnibill\\Bridge\\Symfony\\OmnibillBundle",
         "symfony/dependency-injection": "In a Symfony application: the services of Omnibill\\Bridge\\Symfony\\OmnibillBundle",
         "symfony/http-kernel": "In a Symfony application: Omnibill\\Bridge\\Symfony\\OmnibillBundle itself"

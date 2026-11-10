@@ -8,4 +8,6 @@ return [
     'email' => ['Omnibill\\Email\\Tests\\', 'Omnibill\\Email\\EmailGatewayFactory'],
     'afnor' => ['Omnibill\\Afnor\\Tests\\', 'Omnibill\\Afnor\\AfnorGatewayFactory'],
     'chorus-pro' => ['Omnibill\\ChorusPro\\Tests\\', 'Omnibill\\ChorusPro\\ChorusProGatewayFactory'],
+    'odoo' => ['Omnibill\\Odoo\\Tests\\', 'Omnibill\\Odoo\\OdooGatewayFactory'],
+    'pennylane' => ['Omnibill\\Pennylane\\Tests\\', 'Omnibill\\Pennylane\\PennylaneGatewayFactory'],
 ];

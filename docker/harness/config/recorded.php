@@ -19,8 +19,31 @@ return static function (string $method, string $url, array $options) use ($fixtu
     parse_str((string) parse_url($url, \PHP_URL_QUERY), $query);
     $afnor = 'Omnibill\\Afnor\\AfnorGatewayFactory';
     $cpro = 'Omnibill\\ChorusPro\\ChorusProGatewayFactory';
+    $odoo = 'Omnibill\\Odoo\\OdooGatewayFactory';
+    $pl = 'Omnibill\\Pennylane\\PennylaneGatewayFactory';
+    $filter = json_decode(\is_string($query['filter'] ?? null) ? $query['filter'] : '[]', true);
+    $number = \is_array($filter) && \is_array($filter[0] ?? null) && \is_string($filter[0]['value'] ?? null) ? $filter[0]['value'] : '';
 
     return match (true) {
+        // Odoo (JSON-2): one route per model and method
+        str_contains($path, '/json/2/') => match (substr($path, strpos($path, '/json/2/') + 8)) {
+            'account.journal/search_read', 'account.journal/read' => $fixture($odoo, 'journal.json'),
+            'account.account/search_read', 'account.account/read' => $fixture($odoo, 'accounts.json'),
+            'res.partner/search_read' => $fixture($odoo, 'partners.json'),
+            'account.move/create' => $fixture($odoo, 'created.json'),
+            'account.move/action_post' => $fixture($odoo, 'posted.json'),
+            'account.move/read' => $fixture($odoo, 'move-full.json'),
+            'account.move.line/read' => $fixture($odoo, 'lines.json'),
+            'res.country/search_read' => $fixture($odoo, 'country.json'),
+            'res.partner/create' => $fixture($odoo, 'partner-created.json'),
+            default => new MockResponse('{"name":"werkzeug.exceptions.NotFound","message":"not recorded"}', ['http_code' => 404]),
+        },
+        // Pennylane (Company API v2)
+        str_contains($url, 'pennylane.com') && str_ends_with($path, '/journals') => $fixture($pl, 'journals.json'),
+        str_contains($url, 'pennylane.com') && str_ends_with($path, '/ledger_accounts') => $fixture($pl, \in_array($number, ['615', '44566', '401EDF'], true) ? 'accounts-'.$number.'.json' : 'accounts-none.json'),
+        str_contains($url, 'pennylane.com') && 'POST' === $method && str_ends_with($path, '/ledger_entries') => $fixture($pl, 'entry-created.json', 201),
+        str_contains($url, 'pennylane.com') && str_contains($path, '/ledger_entries/') => $fixture($pl, 'entry.json'),
+        str_contains($url, 'pennylane.com') && str_contains($path, '/suppliers') => $fixture($pl, 'supplier.json', 'POST' === $method ? 201 : 200),
         str_contains($url, 'piste.gouv.fr/api/oauth/token') => $fixture($cpro, 'token.json'),
         str_ends_with($path, '/cpro/factures/v1/deposer/flux') => $fixture($cpro, 'deposer-flux.json'),
         str_ends_with($path, '/cpro/factures/v1/rechercher/fournisseur') => $fixture($cpro, 'rechercher-fournisseur.json'),
