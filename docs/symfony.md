@@ -73,7 +73,8 @@ final class InvoiceStatusRepository extends ServiceEntityRepository implements S
 The bundle knows `Omnibill\Email\EmailGatewayFactory`, `Omnibill\Afnor\AfnorGatewayFactory` and
 `Omnibill\ChorusPro\ChorusProGatewayFactory`, and registers those whose class exists. A factory's
 `$http` argument is the `http_client` service (null when the application has none: the factory makes
-its own client); its other arguments are autowired - the e-mail's `MailerInterface` and
+its own client), kept with its retries off (omnisense/contracts' `Http\NoRetry`: `retry_failed`
+never submits an invoice or posts an entry twice; a `MockHttpClient` is kept as given); its other arguments are autowired - the e-mail's `MailerInterface` and
 `StatusStoreInterface`, each null when the application has no such service (no mailer: building the
 e-mail gateway is an `InvalidConfigException`; no store: this process's memory, lost at the end of
 the request).

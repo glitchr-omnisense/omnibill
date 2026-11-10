@@ -4,6 +4,12 @@
 
 ### Added
 
+- Writes sent once: the bundle hands `http_client` to the platforms' factories with its retries
+  off (omnisense/contracts' `Http\NoRetry`, which omnisense/contracts 1568f2c brings; with an older
+  kernel the client is kept as given; `OmnibillBundle::sentOnce()`, internal), so Symfony's
+  `RetryableHttpClient` (`framework.http_client`'s `retry_failed`) never submits an invoice or
+  posts an entry twice. A `MockHttpClient` is kept as given. docs/symfony.md, docs/policies.md.
+
 - The family on [omnisense/contracts](https://github.com/glitchr-omnisense/contracts), the kernel
   every omni family builds on, with usage policies. `Config`, `GatewayFactory`, `Registry` and
   `Http\Redaction` keep their names and API over the kernel's (prefix `omnibill`, the family's

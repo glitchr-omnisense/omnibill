@@ -12,11 +12,14 @@ use Omnibill\JournalEntriesInterface;
 use Omnibill\Odoo\OdooGatewayFactory;
 use Omnibill\Pennylane\PennylaneGatewayFactory;
 use Omnibill\Registry;
+use Omnisense\Contracts\Http\NoRetry;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
+use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 
@@ -47,7 +50,9 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
  * A factory is autowired: what its constructor asks for - omnibill/email's
  * mailer and status store - is the application's service of that type, when
  * it has one; the application's http_client is given to those that call a
- * platform. An application's own factories (a GatewayFactoryInterface) are
+ * platform, with its retries off (omnisense/contracts' Http\NoRetry):
+ * Symfony's RetryableHttpClient (framework.http_client's retry_failed) never
+ * submits an invoice or posts an entry twice. An application's own factories (a GatewayFactoryInterface) are
  * registered too, autoconfigured.
  *
  * Beside "options", a gateway takes "policy" (the site's tightening of the
@@ -93,7 +98,7 @@ final class OmnibillBundle extends AbstractBundle
                 $definition = $services->set($factory)->autowire()->tag('omnibill.gateway_factory');
                 foreach ((new \ReflectionClass($factory))->getConstructor()?->getParameters() ?? [] as $parameter) {
                     if ('http' === $parameter->getName()) {
-                        $definition->arg('$http', service('http_client')->nullOnInvalid());
+                        $definition->arg('$http', inline_service(HttpClientInterface::class)->factory([self::class, 'sentOnce'])->args([service('http_client')->nullOnInvalid()]));
                     }
                 }
             }
@@ -113,5 +118,17 @@ final class OmnibillBundle extends AbstractBundle
             $services->set('omnibill.contacts.'.$name, ContactsInterface::class)->factory([service(Registry::class), 'contacts'])->args([$name]);
             $builder->registerAliasForArgument('omnibill.contacts.'.$name, ContactsInterface::class, $name);
         }
+    }
+
+    /**
+     * The application's http_client with its retries off (omnisense/contracts'
+     * Http\NoRetry, from contracts 1568f2c); null without one. With an older
+     * omnisense/contracts the client is kept as given.
+     *
+     * @internal the factories' $http argument
+     */
+    public static function sentOnce(?HttpClientInterface $http): ?HttpClientInterface
+    {
+        return null !== $http && class_exists(NoRetry::class) ? NoRetry::of($http) : $http;
     }
 }

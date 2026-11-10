@@ -42,6 +42,12 @@ is made, counted after. A webhook read (`notify()`) reaches nothing and is not c
   given the provider's `Backoff`). Pennylane's `ratelimit-reset`, a Unix time, is read too.
 - Without a Backoff (an application's own client calling `Answer::send()` as before 1.x), a 429 is
   still an `UnreachableException`.
+- Nothing retries a request, nor the HTTP client: the bundle hands `http_client` to the factories
+  with its retries off (omnisense/contracts' `Http\NoRetry`). Symfony's `RetryableHttpClient`
+  (`framework.http_client`'s `retry_failed`) would submit an invoice, set a status or post an entry
+  again on a 429, 502 or 503, and the 429 would never reach the provider's wait. A test client is
+  kept as given. It needs omnisense/contracts 1568f2c or later; with an older one the client is
+  kept as given. A client given to a factory by hand is the application's to configure.
 
 ## A site's configuration
 
