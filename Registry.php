@@ -39,6 +39,9 @@ final class Registry extends BaseRegistry
 
     private readonly RateLimiterInterface $counts;
 
+    /** @var array<string, GatewayInterface> the gateways built per account, by name and account */
+    private array $accounts = [];
+
     /**
      * @param iterable<GatewayFactoryInterface>                                                                                                  $factories
      * @param array<string, array{factory: string, options?: array<string, mixed>, policy?: array<string, mixed>, usage?: array<string, mixed>}> $config
@@ -69,6 +72,22 @@ final class Registry extends BaseRegistry
         $gateway = $this->factory($name)->create([self::PREFIX.'.name' => $name, self::PREFIX.'.limiter' => $this->counts] + array_replace($this->options($name), $overrides));
 
         return $gateway instanceof GatewayInterface ? $gateway : throw new InvalidConfigException(\sprintf('The "%s" gateway is no omnibill gateway.', $name));
+    }
+
+    /**
+     * Since 1.2: one configured gateway acting for several accounts - a
+     * marketplace whose sellers each issue their own invoices through the
+     * same platform under its delegation. The gateway named, its options
+     * with the account's $overrides over them (afnor: ['organization_id' =>
+     * the seller's], the Organization-Id header), built once per account and
+     * kept; get($name) stays the configured one. It counts in the same
+     * limiter as the others.
+     *
+     * @param array<string, mixed> $overrides the account's options
+     */
+    public function forAccount(string $name, string $account, array $overrides = []): GatewayInterface
+    {
+        return $this->accounts[$name."\0".$account] ??= $this->create($name, $overrides);
     }
 
     /** @return array<string, GatewayInterface> */

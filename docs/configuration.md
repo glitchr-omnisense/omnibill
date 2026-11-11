@@ -21,6 +21,18 @@ The same tree is the Symfony bundle's `omnibill.gateways` ([Symfony](symfony.md#
 An option is read as given: `null` and `''` count as missing for a required option, and as "not set"
 for most optional ones (each factory's `?:` or its own check, below).
 
+### One gateway, several accounts (since 1.2)
+
+A marketplace whose sellers each issue their own invoices through one platform, under its
+delegation: `Registry::forAccount($name, $account, $overrides)` - the configured gateway's options
+with the account's over them (afnor: `['organization_id' => $seller->organizationId]`, the
+`Organization-Id` header), built once per account and kept, counted in the same limiter. `get($name)`
+stays the configured account.
+
+```php
+$platform = $registry->forAccount('platform', 'seller-42', ['organization_id' => '552081317']);
+```
+
 ## E-mail (`email`)
 
 `new EmailGatewayFactory(?MailerInterface $mailer = null, ?StatusStoreInterface $store = null)`:
