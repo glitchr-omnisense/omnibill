@@ -10,9 +10,11 @@ namespace Omnibill\Exception;
  *
  * Not to be sent again as it is: look it up first, by the application's own
  * key - FlowLookupInterface::findFlow() with the trackingId given to
- * submit(), EntryLookupInterface::findEntry() with the entry and its key -
- * where the gateway supports it (supports(FindFlow::class),
- * supports(FindEntry::class)); otherwise ask a person to check on the
+ * submit() (or setStatus(), since 1.3), EntryLookupInterface::findEntry()
+ * with the entry and its key, ContactLookupInterface::findContact() with the
+ * contact and its key (since 1.3) - where the gateway supports it
+ * (supports(FindFlow::class), supports(FindEntry::class),
+ * supports(FindContact::class)); otherwise ask a person to check on the
  * provider's side. Nothing in the family sends a write twice.
  *
  * It extends UnreachableException, so the catches written before 1.2 still

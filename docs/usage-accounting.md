@@ -28,6 +28,8 @@ $contacts = $registry->contacts('accountant');
 
 $edf = $contacts->saveContact(new Contact(ContactKind::SUPPLIER, 'EDF', key: 'supplier:edf', accountNumber: '401EDF', siren: '552081317'));
 // keep $edf->reference; saveContact() again with it updates
+// since 1.3, after an OutcomeUnknownException: $contacts->findContact($contact) (ContactLookupInterface),
+// the contact the software has under that key with its reference, or null - create it again only then
 
 $entry = $books->postEntry(new JournalEntry('AC', new DateTimeImmutable('2026-11-10'), 'Électricité novembre', [
     new EntryLine('615', 10000, 0, vat: new Vat(2000, VatKind::DEDUCTIBLE)),

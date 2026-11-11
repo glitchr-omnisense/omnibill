@@ -59,6 +59,23 @@ setStatus
 The `$flow` argument is optional here: it only carries the history over. Keep the returned flow's
 reference to follow the CDAR's own acknowledgement (`fetchStatus()`).
 
+Since 1.3, `setStatus($change, $flow, $trackingId)` (`Request\SetStatus::$trackingId`) gives the
+CDAR's flow the application's own key: it goes as the flow's `trackingId` in its `flowInfo`, beside
+its name and hash - the file itself is the application's, as given. After an
+`OutcomeUnknownException`, `findFlow($trackingId)` finds that flow (direction `Out`) as it finds an
+invoice, before the status is sent again ([errors](errors.md)). A key per declaration, unique among
+the application's flows: `status:<invoice id>:<index>`. Without one, the flow carries none, as
+before 1.3, and cannot be looked up. `GatewayInterface::setStatus()` keeps its two arguments:
+through the interface, `$gateway->execute(new SetStatus($change, $flow, $trackingId))->getFlow()`.
+
+```php
+try {
+    $flow = $gateway->setStatus($change, $invoiceFlow, 'status:F-2026-042:1');
+} catch (OutcomeUnknownException) {
+    $flow = $gateway->findFlow('status:F-2026-042:1');   // null: not taken - declare it again
+}
+```
+
 ## By e-mail
 
 Nobody tells an e-mail's statuses: the application records them, and `setStatus()` records one in

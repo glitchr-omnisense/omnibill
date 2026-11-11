@@ -4,6 +4,17 @@
 
 ### Added
 
+- 1.3, from what omnibase/ledger still lacked after adopting 1.2 (2026-11-11):
+  - `ContactLookupInterface::findContact($contact)` (`Request\Accounting\FindContact`,
+    operation `findContact`): a customer or a supplier found again by the application's key
+    (`Contact::$key`) after an `OutcomeUnknownException` on `saveContact()`, the contact with its
+    reference or `null`. `Gateway` implements it; odoo (`ref`) and pennylane
+    (`external_reference`) answer it.
+  - `Request\SetStatus::$trackingId` and `Gateway::setStatus($change, $flow, $trackingId)`: the
+    application's key for the message carrying a status, sent by afnor as the lifecycle message's
+    flow `trackingId`, so that `findFlow($trackingId)` finds it. `GatewayInterface` keeps its
+    signatures; a request built without it is as before.
+
 - 1.2, from what omnibase/ledger and omnibase/marketplace needed (2026-11-11):
   - `Exception\OutcomeUnknownException` (extends `UnreachableException`, no longer `final`): a
     write that left and whose answer failed (a timeout, a 5xx). `Http\Answer::send()` takes

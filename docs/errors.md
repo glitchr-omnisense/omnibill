@@ -78,8 +78,9 @@ it again - nothing in the family sends a write twice:
 
 | | Look-up | Gateways |
 |---|---|---|
-| `submit($invoice, $trackingId)`, `report()` | `findFlow($trackingId)` (`FlowLookupInterface`, `Request\FindFlow`): the flow, or `null` | `afnor` (`POST /v1/flows/search`, `where.trackingId`, `flowDirection: [Out]`) |
+| `submit($invoice, $trackingId)`, `report()`, `setStatus($change, $flow, $trackingId)` (since 1.3) | `findFlow($trackingId)` (`FlowLookupInterface`, `Request\FindFlow`): the flow, or `null` | `afnor` (`POST /v1/flows/search`, `where.trackingId`, `flowDirection: [Out]`; a status is its lifecycle message's flow) |
 | `postEntry($entry)` | `findEntry($entry)` (`EntryLookupInterface`, `Request\Accounting\FindEntry`): the entry as the software has it, or `null` | `odoo` (the key in `ref` or the narration), `pennylane` (date, journal, label and piece: it keeps no key) |
+| `saveContact($contact)` (since 1.3) | `findContact($contact)` (`ContactLookupInterface`, `Request\Accounting\FindContact`): the contact as the software has it, with its reference, or `null` | `odoo` (`res.partner`'s `ref`), `pennylane` (`external_reference eq` on `/suppliers` or `/customers`) |
 
 ```php
 try {
@@ -89,8 +90,10 @@ try {
 }
 ```
 
-`supports(FindFlow::class)` / `supports(FindEntry::class)` say beforehand whether a gateway can.
-Where none can (`email`, `chorus-pro`), the application asks a person to check. A flow just
+`supports(FindFlow::class)` / `supports(FindEntry::class)` / `supports(FindContact::class)` say
+beforehand whether a gateway can. Where none can (`email`, `chorus-pro`), the application asks a
+person to check. A status declared by e-mail is recorded in the application's own store: nothing
+leaves, nothing to look up. A flow just
 deposited may take a moment to show in a platform's search: ask again later before concluding
 `null`.
 

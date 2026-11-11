@@ -46,6 +46,11 @@ nor a bank. It keeps no books: the application keeps the flows' references and t
 What a gateway cannot do is a `NotSupportedException`, and `supports()` says so beforehand: an
 e-mail has no inbox nor directory, Chorus Pro gives a supplier no inbox.
 
+A write whose answer was lost is an `OutcomeUnknownException`: it is looked up by the
+application's own key before being sent again - `findFlow($trackingId)` for an invoice, a report
+or (since 1.3) a declared status, `findEntry()` for an entry, `findContact()` (since 1.3) for a
+customer or a supplier - where the gateway can ([Errors](docs/errors.md)).
+
 ## The reform, and the e-mail gateway
 
 In France every company subject to VAT must be able to **receive** electronic invoices through an

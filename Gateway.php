@@ -28,18 +28,23 @@ use Omnisense\Contracts\Policy\PolicyGuard;
  * EntryLookupInterface): a write found again by the application's key, and
  * receive() takes the kinds of flows wanted (Request\Receive::$kinds): what
  * the platform does not filter, the gateway leaves out of the Inbox.
+ * Since 1.3, findContact() (ContactLookupInterface): a contact found again
+ * by the application's key, and setStatus() takes the trackingId of the
+ * message carrying the status (Request\SetStatus::$trackingId), for
+ * findFlow(). GatewayInterface keeps its signatures.
  *
  * Built by a GatewayFactory, it runs behind the provider's PolicyGuard: each
  * request that reaches the provider is an operation named after its typed
  * method (submit, fetchStatus, receive, setStatus, lookup, report, findFlow,
- * postEntry, fetchEntry, entries, findEntry, saveContact, fetchContact, contacts; a
+ * postEntry, fetchEntry, entries, findEntry, saveContact, fetchContact, contacts,
+ * findContact; a
  * request of the application's own, its short name with a lower-case
  * initial), checked against the policy's rate limits and the provider's
  * wait before, counted after; Exception\UsageLimitReachedException refuses
  * it before it is made. A webhook read (Notify) reaches nothing and is not
  * counted.
  */
-final class Gateway implements GatewayInterface, JournalEntriesInterface, ContactsInterface, FlowLookupInterface, EntryLookupInterface
+final class Gateway implements GatewayInterface, JournalEntriesInterface, ContactsInterface, FlowLookupInterface, EntryLookupInterface, ContactLookupInterface
 {
     /** The operation each request is, for the guard: its typed method's name; null for what reaches no provider. */
     private const OPERATIONS = [
@@ -58,6 +63,7 @@ final class Gateway implements GatewayInterface, JournalEntriesInterface, Contac
         Request\Accounting\SaveContact::class => 'saveContact',
         Request\Accounting\FetchContact::class => 'fetchContact',
         Request\Accounting\ListContacts::class => 'contacts',
+        Request\Accounting\FindContact::class => 'findContact',
     ];
 
     private ?PolicyGuard $guard = null;
@@ -171,9 +177,10 @@ final class Gateway implements GatewayInterface, JournalEntriesInterface, Contac
         return $this->execute(new Request\Accounting\FindEntry($entry))->getEntry();
     }
 
-    public function setStatus(StatusChange $change, ?Flow $flow = null): Flow
+    /** @param string|null $trackingId the application's key for the message carrying the status (since 1.3), for findFlow() */
+    public function setStatus(StatusChange $change, ?Flow $flow = null, ?string $trackingId = null): Flow
     {
-        return $this->execute(new Request\SetStatus($change, $flow))->getFlow() ?? throw new ProviderException($this->name, 'No flow answered.');
+        return $this->execute(new Request\SetStatus($change, $flow, $trackingId))->getFlow() ?? throw new ProviderException($this->name, 'No flow answered.');
     }
 
     public function lookup(string $identifier): array
@@ -214,6 +221,11 @@ final class Gateway implements GatewayInterface, JournalEntriesInterface, Contac
     public function fetchContact(Contact $contact): Contact
     {
         return $this->execute(new Request\Accounting\FetchContact($contact))->getContact() ?? throw new ProviderException($this->name, 'No contact answered.');
+    }
+
+    public function findContact(Contact $contact): ?Contact
+    {
+        return $this->execute(new Request\Accounting\FindContact($contact))->getContact();
     }
 
     public function contacts(ContactKind $kind, ?string $search = null, ?string $cursor = null, int $limit = 25): ContactList

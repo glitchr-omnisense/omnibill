@@ -10,6 +10,8 @@ use Omnibill\Gateway;
 use Omnibill\Http\Answer;
 use Omnibill\Model\Addressing;
 use Omnibill\Model\Capabilities;
+use Omnibill\Model\Contact;
+use Omnibill\Model\ContactKind;
 use Omnibill\Model\EReporting\EReportData;
 use Omnibill\Model\EReporting\Payment;
 use Omnibill\Model\EReporting\RateTotal;
@@ -23,10 +25,12 @@ use Omnibill\Model\LifecycleStatus;
 use Omnibill\Model\Received;
 use Omnibill\Model\StatusChange;
 use Omnibill\Registry;
+use Omnibill\Request\Accounting\FindContact;
 use Omnibill\Request\Accounting\FindEntry;
 use Omnibill\Request\FindFlow;
 use Omnibill\Request\Receive;
 use Omnibill\Request\Request;
+use Omnibill\Request\SetStatus;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
@@ -77,6 +81,30 @@ final class WritesAndLookupsTest extends TestCase
         self::assertFalse($gateway->supports(FindEntry::class));
         $this->expectException(NotSupportedException::class);
         $gateway->findEntry(new JournalEntry('OD', new \DateTimeImmutable('2026-11-11'), 'Frais', key: 'misc:1'));
+    }
+
+    public function testContactsAreFoundAgainByTheirKeyWhereTheGatewaySupportsIt(): void
+    {
+        $gateway = new Gateway('t', 'T', new Capabilities(), [new LookupAction()]);
+        $edf = new Contact(ContactKind::SUPPLIER, 'EDF', 'supplier:edf');
+
+        self::assertTrue($gateway->supports(FindContact::class));
+        self::assertSame(['P-7', 'supplier:edf'], [$gateway->findContact($edf)?->reference, $gateway->findContact($edf)?->key]);
+        self::assertNull($gateway->findContact(new Contact(ContactKind::SUPPLIER, 'EDF', 'supplier:other')), 'none: an answer too');
+        self::assertSame('findContact', Gateway::operation(new FindContact($edf)));
+        $this->expectException(NotSupportedException::class);
+        (new Gateway('u', 'U', new Capabilities(), []))->findContact($edf);
+    }
+
+    public function testAStatusIsDeclaredWithTheTrackingIdOfItsMessageForFindFlow(): void
+    {
+        $gateway = new Gateway('t', 'T', new Capabilities(), [new LookupAction()]);
+        $change = new StatusChange(LifecycleStatus::REFUSED, 'F-2026-042', reason: 'Not ordered');
+
+        self::assertSame('status:F-2026-042:1', $gateway->setStatus($change, null, 'status:F-2026-042:1')->trackingId);
+        self::assertNull($gateway->setStatus($change)->trackingId);
+        self::assertNull((new SetStatus($change))->trackingId, 'a request built before 1.3 still is');
+        self::assertSame('setStatus', Gateway::operation(new SetStatus($change, trackingId: 'k')));
     }
 
     public function testAnInboxIsReadByKindsWhatThePlatformDidNotFilterLeftOut(): void
@@ -131,18 +159,26 @@ final class WritesAndLookupsTest extends TestCase
     }
 }
 
-/** A platform that finds flow "order-1" and has a mixed inbox, its search filtering nothing. */
+/**
+ * A platform that finds flow "order-1" and contact "supplier:edf", has a
+ * mixed inbox, its search filtering nothing, and carries a status as a flow
+ * with the trackingId given.
+ */
 final class LookupAction implements ActionInterface
 {
     public function supports(Request $request): bool
     {
-        return $request instanceof FindFlow || $request instanceof Receive;
+        return $request instanceof FindFlow || $request instanceof Receive || $request instanceof FindContact || $request instanceof SetStatus;
     }
 
     public function execute(Request $request): void
     {
         if ($request instanceof FindFlow) {
             $request->setResult('order-1' === $request->trackingId ? new Flow('F-1', trackingId: 'order-1') : null);
+        } elseif ($request instanceof FindContact) {
+            $request->setResult('supplier:edf' === $request->contact->key ? $request->contact->with(reference: 'P-7') : null);
+        } elseif ($request instanceof SetStatus) {
+            $request->setResult(new Flow('LC-2', FlowKind::LIFECYCLE, trackingId: $request->trackingId));
         } elseif ($request instanceof Receive) {
             $request->setResult(new Inbox([new Received(new Flow('IN-1', FlowKind::INVOICE)), new Received(new Flow('LC-1', FlowKind::LIFECYCLE))], null === $request->cursor ? 'c1' : 'c2', true));
         }
