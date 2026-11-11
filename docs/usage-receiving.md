@@ -25,6 +25,27 @@ $row->cursor = $inbox->cursor;           // the next receive() starts there
 $inbox->more;                            // true: there is more, call again
 ```
 
+### Two readers of one inbox (since 1.2)
+
+`receive()` takes the kinds of flows wanted - `Omnibill\Model\FlowKind` - so that the suppliers'
+invoices (omnibase/ledger) and the statuses of the application's own invoices (omnibase/marketplace)
+are read by two processes without either downloading the other's files:
+
+```php
+use Omnibill\Model\FlowKind;
+use Omnibill\Request\Receive;
+
+$inbox = $gateway->execute(new Receive($row->cursor, 25, [FlowKind::LIFECYCLE]))->getInbox();   // the statuses only
+$inbox = $gateway->execute(new Receive($row->cursor, 25, [FlowKind::INVOICE]))->getInbox();     // the invoices only
+```
+
+(`Gateway::receive($cursor, $limit, $kinds)` too; `GatewayInterface::receive()` keeps its two
+arguments.) `afnor` puts them in the search's `where.flowType` - `INVOICE`: `SupplierInvoice`,
+`CustomerInvoice`; `LIFECYCLE`: `CustomerInvoiceLC`, `SupplierInvoiceLC` (the Flow Service's
+OpenAPI 1.3.0 and 1.4.0) - and downloads only what matches. A kind with no flowType (`REPORT`,
+`OTHER`) is not filtered by the platform: the gateway leaves the rest out of the `Inbox`. **A cursor
+belongs to its kinds**: keep one per reader.
+
 `receive()` sends `POST /v1/flows/search` with `where.flowDirection: [In]`, `limit` (1 to 100) and
 the cursor, then downloads each flow's file (`GET /v1/flows/{flowId}?docType=Original`): one call
 per flow. Each flow becomes a `Received`:

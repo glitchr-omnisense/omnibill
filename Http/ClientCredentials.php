@@ -41,7 +41,7 @@ final class ClientCredentials
             'client_id' => $this->clientId,
             'client_secret' => $this->clientSecret,
             'scope' => $this->scope,
-        ])], $this->backoff);
+        ])], $this->backoff, false);
         if (\in_array($answer->status, [400, 401, 403], true)) {
             $error = json_decode($answer->body, true);
             $code = \is_array($error) && \is_scalar($error['error'] ?? null) ? (string) $error['error'] : null;

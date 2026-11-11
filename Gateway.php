@@ -13,6 +13,7 @@ use Omnibill\Model\EntryList;
 use Omnibill\Model\JournalEntry;
 use Omnibill\Model\EReport;
 use Omnibill\Model\Flow;
+use Omnibill\Model\FlowKind;
 use Omnibill\Model\Inbox;
 use Omnibill\Model\Invoice;
 use Omnibill\Model\Notification;
@@ -23,18 +24,22 @@ use Omnisense\Contracts\Policy\PolicyGuard;
  * A gateway's actions behind one door: the first action supporting a
  * request answers it. Since 1.1 the door has the journal-entries and
  * contacts contracts too; a gateway answers those its actions support.
+ * Since 1.2, findFlow() and findEntry() (FlowLookupInterface,
+ * EntryLookupInterface): a write found again by the application's key, and
+ * receive() takes the kinds of flows wanted (Request\Receive::$kinds): what
+ * the platform does not filter, the gateway leaves out of the Inbox.
  *
  * Built by a GatewayFactory, it runs behind the provider's PolicyGuard: each
  * request that reaches the provider is an operation named after its typed
- * method (submit, fetchStatus, receive, setStatus, lookup, report,
- * postEntry, fetchEntry, entries, saveContact, fetchContact, contacts; a
+ * method (submit, fetchStatus, receive, setStatus, lookup, report, findFlow,
+ * postEntry, fetchEntry, entries, findEntry, saveContact, fetchContact, contacts; a
  * request of the application's own, its short name with a lower-case
  * initial), checked against the policy's rate limits and the provider's
  * wait before, counted after; Exception\UsageLimitReachedException refuses
  * it before it is made. A webhook read (Notify) reaches nothing and is not
  * counted.
  */
-final class Gateway implements GatewayInterface, JournalEntriesInterface, ContactsInterface
+final class Gateway implements GatewayInterface, JournalEntriesInterface, ContactsInterface, FlowLookupInterface, EntryLookupInterface
 {
     /** The operation each request is, for the guard: its typed method's name; null for what reaches no provider. */
     private const OPERATIONS = [
@@ -44,10 +49,12 @@ final class Gateway implements GatewayInterface, JournalEntriesInterface, Contac
         Request\SetStatus::class => 'setStatus',
         Request\Lookup::class => 'lookup',
         Request\Report::class => 'report',
+        Request\FindFlow::class => 'findFlow',
         Request\Notify::class => null,
         Request\Accounting\PostEntry::class => 'postEntry',
         Request\Accounting\FetchEntry::class => 'fetchEntry',
         Request\Accounting\ListEntries::class => 'entries',
+        Request\Accounting\FindEntry::class => 'findEntry',
         Request\Accounting\SaveContact::class => 'saveContact',
         Request\Accounting\FetchContact::class => 'fetchContact',
         Request\Accounting\ListContacts::class => 'contacts',
@@ -127,6 +134,9 @@ final class Gateway implements GatewayInterface, JournalEntriesInterface, Contac
                 if (!$request->isAnswered()) {
                     throw new ProviderException($this->name, \sprintf('%s left the request unanswered.', $action::class));
                 }
+                if ($request instanceof Request\Receive && [] !== $request->kinds && null !== ($inbox = $request->getInbox())) {
+                    $request->setResult($inbox->only($request->kinds));
+                }
 
                 return $request;
             }
@@ -145,9 +155,20 @@ final class Gateway implements GatewayInterface, JournalEntriesInterface, Contac
         return $this->execute(new Request\FetchStatus($flow))->getFlow() ?? throw new ProviderException($this->name, 'No flow answered.');
     }
 
-    public function receive(?string $cursor = null, int $limit = 25): Inbox
+    /** @param list<FlowKind> $kinds the kinds of flows wanted (since 1.2); none: all */
+    public function receive(?string $cursor = null, int $limit = 25, array $kinds = []): Inbox
     {
-        return $this->execute(new Request\Receive($cursor, $limit))->getInbox() ?? throw new ProviderException($this->name, 'No inbox answered.');
+        return $this->execute(new Request\Receive($cursor, $limit, $kinds))->getInbox() ?? throw new ProviderException($this->name, 'No inbox answered.');
+    }
+
+    public function findFlow(string $trackingId): ?Flow
+    {
+        return $this->execute(new Request\FindFlow($trackingId))->getFlow();
+    }
+
+    public function findEntry(JournalEntry $entry): ?JournalEntry
+    {
+        return $this->execute(new Request\Accounting\FindEntry($entry))->getEntry();
     }
 
     public function setStatus(StatusChange $change, ?Flow $flow = null): Flow

@@ -4,6 +4,25 @@
 
 ### Added
 
+- 1.2, from what omnibase/ledger and omnibase/marketplace needed (2026-11-11):
+  - `Exception\OutcomeUnknownException` (extends `UnreachableException`, no longer `final`): a
+    write that left and whose answer failed (a timeout, a 5xx). `Http\Answer::send()` takes
+    `$write` (default: POST, PUT, PATCH, DELETE); a write that never left, a read and a 429 stay
+    `UnreachableException`. Token requests are reads.
+  - `FlowLookupInterface::findFlow($trackingId)` and `EntryLookupInterface::findEntry($entry)`
+    (`Request\FindFlow`, `Request\Accounting\FindEntry`, operations `findFlow`, `findEntry`):
+    a write found again by the application's key. `Gateway` implements both.
+  - `Request\Receive::$kinds` (and `Gateway::receive($cursor, $limit, $kinds)`): an inbox read
+    by kinds of flows; what the platform did not filter is left out (`Inbox::only()`).
+  - `StatusChange::$amounts` (by VAT rate, for "Encaissée"), `StatusChange::withFile()`.
+  - `Addressing::$scheme`, `0225` by default (`Addressing::FRENCH_DIRECTORY`).
+  - `Model\EReporting\` (`EReportData`, `Transaction`, `Payment`, `RateTotal`,
+    `TransactionKind`): e-reporting as data, no file format.
+  - `Writer\LifecycleMessageWriterInterface`, `Writer\EReportWriterInterface`: what the
+    application implements (and a person writes or validates against the DGFiP's annexes) for the
+    CDAR and the e-reporting file; the family writes neither.
+  - `Registry::forAccount()`: one gateway, several accounts (a marketplace's sellers).
+
 - Writes sent once: the bundle hands `http_client` to the platforms' factories with its retries
   off (omnisense/contracts' `Http\NoRetry`, which omnisense/contracts 1568f2c brings; with an older
   kernel the client is kept as given; `OmnibillBundle::sentOnce()`, internal), so Symfony's
