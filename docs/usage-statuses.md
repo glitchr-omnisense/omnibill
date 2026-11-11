@@ -30,7 +30,20 @@ lifecycle message, CDAR).
 ## On an approved platform (afnor)
 
 A platform carries a status as a lifecycle message (CDAR) of its own flow. The family does not write
-one: `StatusChange::$file` is required (`InvalidConfigException`: `An approved platform carries a
+one - and will not: the message's content is set by XP Z12-012/013 and the DGFiP's external
+specifications' annexes (Annex 2, flux 6), whose notice forbids their processing by AI. **A person
+writes the writer**, or validates it against Annex 2: the application implements
+`Omnibill\Writer\LifecycleMessageWriterInterface` (`write(StatusChange $change, ?Flow $flow):
+StatusChange`, the change `withFile($cdar, $filename)`), finding the parties and the invoice's date
+from the invoice's number it keeps, and hands `setStatus()` the change it returns. What it must
+carry, for each status a buyer or a seller declares (204 taken over, 205 approved, 206 partially
+approved, 207 disputed, 210 refused with its reason, 212 paid): the invoice's number and date, the
+sender and the recipient, the status code, the reason where there is one, and for 212 the amounts
+received by VAT rate - `StatusChange::$amounts` since 1.2 (`[2000 => '1200.00', 550 => '50.00']`,
+the rate in basis points; `$amount` stays the total), the payment data the DGFiP lists for
+"Encaissée" (impots.gouv.fr).
+
+`StatusChange::$file` is required (`InvalidConfigException`: `An approved platform carries a
 status as a lifecycle message: give the StatusChange its CDAR file - the family does not write
 one.`). The file is submitted as a flow (`POST /v1/flows`, `flowSyntax` CDAR, no processing rule or
 profile), named `filename`, else `CDV-<code>-<invoice number>.xml`. The answer is **the CDAR's

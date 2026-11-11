@@ -109,6 +109,9 @@ One step: `status`, `invoiceNumber`, `at`, `reason`, `amount` (for a payment), `
 platform's own), and `file`/`filename` - the lifecycle message itself (CDAR), where the platform
 carries one.
 
+Since 1.2, `$amounts`: for `PAID`, the amount received at each VAT rate (basis points => decimal
+string), and `withFile($file, $filename)` for the lifecycle message the application's writer made.
+
 ## Inbox and Received
 
 `receive($cursor)` answers an `Inbox`: `items` (each a `Received`: the `flow`, and an `invoice` or a
@@ -120,6 +123,8 @@ them.
 A line of the national directory: `siren`, `siret`, `routingCode`, `electronicAddress` (the
 addressing identifier), `name`, `platform` (`WK`: an approved platform, `DFH`: the public portal),
 `status` (`Enabled`, `Disabled`, `Upcoming`), `data`. `isEnabled()`.
+
+Since 1.2, `$scheme`: the electronic address's scheme, `0225` unless the directory says otherwise.
 
 ## EReport
 
