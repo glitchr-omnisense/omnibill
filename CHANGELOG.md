@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-13
+
 ### Added
 
 - 1.3, from what omnibase/ledger still lacked after adopting 1.2 (2026-11-11):
