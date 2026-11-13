@@ -46,7 +46,6 @@ is made, counted after. A webhook read (`notify()`) reaches nothing and is not c
   with its retries off (omnisense/contracts' `Http\NoRetry`). Symfony's `RetryableHttpClient`
   (`framework.http_client`'s `retry_failed`) would submit an invoice, set a status or post an entry
   again on a 429, 502 or 503, and the 429 would never reach the provider's wait. A test client is
-  kept as given. It needs omnisense/contracts 1568f2c or later; with an older one the client is
   kept as given. A client given to a factory by hand is the application's to configure.
 
 ## A site's configuration

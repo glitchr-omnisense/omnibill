@@ -122,13 +122,12 @@ final class OmnibillBundle extends AbstractBundle
 
     /**
      * The application's http_client with its retries off (omnisense/contracts'
-     * Http\NoRetry, from contracts 1568f2c); null without one. With an older
-     * omnisense/contracts the client is kept as given.
+     * Http\NoRetry); null without one.
      *
      * @internal the factories' $http argument
      */
     public static function sentOnce(?HttpClientInterface $http): ?HttpClientInterface
     {
-        return null !== $http && class_exists(NoRetry::class) ? NoRetry::of($http) : $http;
+        return null === $http ? null : NoRetry::of($http);
     }
 }

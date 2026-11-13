@@ -35,8 +35,7 @@
   - `Registry::forAccount()`: one gateway, several accounts (a marketplace's sellers).
 
 - Writes sent once: the bundle hands `http_client` to the platforms' factories with its retries
-  off (omnisense/contracts' `Http\NoRetry`, which omnisense/contracts 1568f2c brings; with an older
-  kernel the client is kept as given; `OmnibillBundle::sentOnce()`, internal), so Symfony's
+  off (omnisense/contracts' `Http\NoRetry`; `OmnibillBundle::sentOnce()`, internal), so Symfony's
   `RetryableHttpClient` (`framework.http_client`'s `retry_failed`) never submits an invoice or
   posts an entry twice. A `MockHttpClient` is kept as given. docs/symfony.md, docs/policies.md.
 
@@ -59,6 +58,8 @@
 
 ### Changed
 
+- Requires `omnisense/contracts: ^1.0`: stable versions, so `composer require omnisense/omnibill` installs in a project at the default minimum-stability. `extra.branch-alias` names 1.x (`1.x-dev`); the CI (`.github/workflows/ci.yml`, glitchr-studio/ci's shared workflow) and the release on a tag (`release.yml`).
+- The package passes its CI alone: require-dev gains `omnibill/email` (the bare check sends an invoice through it) and `phpstan/phpstan`; PHPStan leaves the bundle's list of the gateway packages it knows, optional, to `class_exists()`. `OmnibillBundle::sentOnce()` no longer checks that omnisense/contracts has its `Http\NoRetry` (1.0 has). The README's plain-PHP block is a whole first call, through the e-mail gateway and a mailer that sends nothing.
 - PHPStan at level max with an empty baseline: the 91 findings of the code before 1.1 are fixed.
   `Gateway`'s e-invoice methods throw the gateway's `ProviderException` where an action answered
   no model, rather than returning null from a method typed not to.

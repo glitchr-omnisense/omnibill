@@ -81,15 +81,27 @@ composer require omnisense/omnibill omnibill/email
 ```
 
 ```php
-use Omnibill\Email\EmailGatewayFactory;
-use Omnibill\Registry;
+require __DIR__.'/vendor/autoload.php';
 
+use Omnibill\Email\EmailGatewayFactory;
+use Omnibill\Model\{Invoice, Party, Syntax};
+use Omnibill\Registry;
+use Symfony\Component\Mailer\{Mailer, Transport};
+
+$mailer = new Mailer(Transport::fromDsn(getenv('MAILER_DSN') ?: 'null://null'));   // null://: nothing leaves
 $registry = new Registry([new EmailGatewayFactory($mailer)], [
     'invoices' => ['factory' => 'email', 'options' => ['from' => 'Atelier <factures@example.org>']],
 ]);
+$flow = $registry->get('invoices')->submit(new Invoice(
+    content: "%PDF-1.7\n...", filename: 'F-2026-042.pdf', syntax: Syntax::FACTURX, number: 'F-2026-042',  // the application's conformant file
+    seller: new Party('Atelier', siren: '123456789'), buyer: new Party('Maison Érable', siren: '702042755', email: 'compta@erable.example'), total: '1250.00',
+));
+echo $flow->invoiceNumber, ': ', $flow->status->label(), "\n";   // F-2026-042: Envoyée
 ```
 
-No bundle, no container: a factory per gateway package, the registry built by hand.
+No account: the e-mail gateway sends through the application's mailer. The approved platforms
+(`omnibill/afnor`), Chorus Pro, Odoo and Pennylane each need an account of their own, said in
+their READMEs. No bundle, no container: a factory per gateway package, the registry built by hand.
 [docs/installation.md](docs/installation.md) opens on a whole script that runs as it is.
 
 ## Symfony
